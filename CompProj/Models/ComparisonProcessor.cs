@@ -7,18 +7,18 @@ using System.Threading.Tasks;
 namespace CompProj.Models {
     class ComparisonProcessor : IComparisonProcessor {
         public void Compare(IWorkTable masterTable, IWorkTable testTable) {
-            var query = from m in tableMaster
-                        join t in tableTest on m.Cells[GetValue("SECURITY_ID")] equals t.Cells[GetValue("SECURITY_ID")]
-                        select m.Compare(t);
+            //var query = from m in tableMaster
+            //            join t in tableTest on m.Cells[GetValue("SECURITY_ID")] equals t.Cells[GetValue("SECURITY_ID")]
+            //            select m.Compare(t);
 
-            foreach (var item in query) {
-                AppendText(item);
-            }
+            //foreach (var item in query) {
+            //    AppendText(item);
+            //}
         }
 
-        private int GetValue(string name) {
-            return Headers.FindIndex(item => item == name);
-        }
+        //private int GetValue(string name) {
+        //    return Headers.FindIndex(item => item == name);
+        //}
 
         public string Compare(Row row) {
             StringBuilder comparedRow = new StringBuilder();

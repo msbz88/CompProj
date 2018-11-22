@@ -17,8 +17,8 @@ namespace CompProj.Models {
         }
 
         private async void PrepareComparison(string pathMasterFile, string pathTestFile, Encoding encoding, int bufferSize, int numRowsToSkip) {
-            MasterFileContent = await FileReader.ReadAllLinesAsync(pathMasterFile, encoding, bufferSize, numRowsToSkip);
-            TestFileContent = await FileReader.ReadAllLinesAsync(pathTestFile, encoding, bufferSize, numRowsToSkip);
+            MasterFileContent = await FileReader.ReadAllLinesAsync(pathMasterFile, numRowsToSkip);
+            TestFileContent = await FileReader.ReadAllLinesAsync(pathMasterFile, numRowsToSkip);
             ExceptedMasterData = ExceptAsync(MasterFileContent, TestFileContent);
             ExceptedTestData = ExceptAsync(TestFileContent, MasterFileContent);
         }
