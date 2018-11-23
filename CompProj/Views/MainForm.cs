@@ -20,26 +20,7 @@ namespace CompProj {
 
         private void ButtonOpenFilesClick(object sender, EventArgs e) {
             OpenFileEvent?.Invoke(sender, e);
-        }
-
-        public string GetFilePath(string fileVersion) {
-            OpenFileDialog openFileDialog = new OpenFileDialog {
-                InitialDirectory = @"D:\",
-                Title = "Select " + fileVersion + " file",
-                CheckFileExists = true,
-                CheckPathExists = true,
-                DefaultExt = "txt",
-                Filter = "txt files (*.txt)|*.txt",
-                FilterIndex = 2,
-                RestoreDirectory = true,
-                ReadOnlyChecked = true,
-                ShowReadOnly = true
-            };
-            if (openFileDialog.ShowDialog() == DialogResult.OK) {
-                return openFileDialog.FileName;            
-            }
-            return String.Empty;
-        }
+        }       
 
         public void WriteMessage(string messages) {
             richTextBoxMessages.AppendText(messages + Environment.NewLine);

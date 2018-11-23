@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CompProj.Models.Interfaces;
 
 namespace CompProj.Models {
     public class ComparisonHelper {
@@ -11,14 +12,16 @@ namespace CompProj.Models {
         public List<string> TestFileContent { get; private set;}
         public List<string> ExceptedMasterData { get; private set;}
         public List<string> ExceptedTestData { get; private set;}
+        IImpConfig ImportConfiguration { get; set; }
 
-        public ComparisonHelper(IFileReader fileReader) {
+        public ComparisonHelper(IFileReader fileReader, IImpConfig importConfiguration) {
             FileReader = fileReader;
+            ImportConfiguration = importConfiguration;
         }
 
-        private async void PrepareComparison(string pathMasterFile, string pathTestFile, Encoding encoding, int bufferSize, int numRowsToSkip) {
-            MasterFileContent = await FileReader.ReadAllLinesAsync(pathMasterFile, numRowsToSkip);
-            TestFileContent = await FileReader.ReadAllLinesAsync(pathMasterFile, numRowsToSkip);
+        public async void PrepareComparison() {
+            MasterFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathMasterFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.RowsToSkip);
+            TestFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathTestFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.RowsToSkip);
             ExceptedMasterData = ExceptAsync(MasterFileContent, TestFileContent);
             ExceptedTestData = ExceptAsync(TestFileContent, MasterFileContent);
         }

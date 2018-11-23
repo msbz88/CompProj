@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using CompProj.Presenters;
 using CompProj.Views;
+using CompProj.Views.Interfaces;
 using CompProj.Models;
 using System.Text;
 
@@ -16,15 +17,19 @@ namespace CompProj {
         [STAThread]
         static void Main() {
             Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            Application.SetCompatibleTextRenderingDefault(false);      
+
+            IMainView mainView = new MainForm();
+            IImpConfigView impConfigView = new ImpConfigForm();
+
+            IFileReader fileReader = new FileReader();
+
+            ImpConfigPresenter impConfigPresenter = new ImpConfigPresenter(impConfigView, fileReader);
+            MainPresenter mainPresenter = new MainPresenter(mainView, impConfigPresenter, fileReader);
+
             Application.Run();
 
-            MainForm mainForm = new MainForm();
-            FilePreviewForm filePreviewForm = new FilePreviewForm();
 
-            MainPresenter mainPresenter = new MainPresenter(mainForm, filePreviewForm);
-            FileReader fileReader = new FileReader(Encoding.ASCII, 5000);
-            FilePreviewPresenter filePreviewPresenter = new FilePreviewPresenter(filePreviewForm, fileReader.PreviewFile(mainPresenter.PathMasterFile, 50));
-         }
+        }
     }
 }

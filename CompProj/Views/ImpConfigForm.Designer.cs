@@ -1,5 +1,5 @@
 ﻿namespace CompProj.Views {
-    partial class FilePreviewForm {
+    partial class ImpConfigForm {
         /// <summary>
         /// Required designer variable.
         /// </summary>

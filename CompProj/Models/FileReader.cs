@@ -7,19 +7,11 @@ using System.Threading.Tasks;
 
 namespace CompProj.Models {
     public class FileReader: IFileReader {
-        public Encoding Encoding { get; set; }
-        public int BufferSize { get; set; }
-
-        public FileReader(Encoding encoding, int bufferSize) {
-            Encoding = encoding;
-            BufferSize = bufferSize;
-        }
-
-        public async Task<List<string>> ReadAllLinesAsync(string filePath, int rowsToSkip) {
+        public async Task<List<string>> ReadAllLinesAsync(string filePath, Encoding encoding, int bufferSize, int rowsToSkip) {
             var lines = new List<string>();
             FileOptions fileOptions = FileOptions.Asynchronous | FileOptions.SequentialScan;
-            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize, fileOptions))
-            using (var reader = new StreamReader(stream, Encoding)) {
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize, fileOptions))
+            using (var reader = new StreamReader(stream, encoding)) {
                 if (rowsToSkip > 0) {
                     for (int i = 0; i < rowsToSkip; i++) {
                         await reader.ReadLineAsync();
@@ -33,7 +25,7 @@ namespace CompProj.Models {
             return lines.ToList();
         }
 
-        public List<string> PreviewFile (string filePath, int rowsToTake) {
+        public List<string> ReadLines (string filePath, int rowsToTake) {
             return File.ReadAllLines(filePath).Take(rowsToTake).ToList();
         }
     }
