@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 namespace CompProj.Views.Interfaces {
     public interface IImpConfigView {
         event EventHandler LoadEvent;
-        char Delimiter { get; set; }
-        int RowsToSkip { get; set; }
-        int HeadersRow { get; set; }
+        string Delimiter { get; set; }
+        string RowsToSkip { get; set; }
+        string HeadersRow { get; set; }
+        void ShowError(string error);
         void ShowView();
         void Close();
         void DisplayFilePreview(List<string> content);

@@ -13,9 +13,9 @@ namespace CompProj.Views {
     public partial class ImpConfigForm : Form, IImpConfigView {
         public event EventHandler LoadEvent;
 
-        public char Delimiter { get { return textBoxDelimiter.Text[0]; } set { textBoxDelimiter.Text = value.ToString(); } }
-        public int RowsToSkip { get { return int.Parse(textBoxSkipRows.Text); } set { textBoxSkipRows.Text = value.ToString(); } }
-        public int HeadersRow { get { return int.Parse(textBoxHeadersRow.Text); } set { textBoxHeadersRow.Text = value.ToString(); } }
+        public string Delimiter { get { return textBoxDelimiter.Text; } set { textBoxDelimiter.Text = value.ToString(); } }
+        public string RowsToSkip { get { return textBoxSkipRows.Text; } set { textBoxSkipRows.Text = value.ToString(); } }
+        public string HeadersRow { get { return textBoxHeadersRow.Text; } set { textBoxHeadersRow.Text = value.ToString(); } }
 
         public ImpConfigForm() {
             InitializeComponent();
@@ -48,6 +48,10 @@ namespace CompProj.Views {
                 return openFileDialog.FileName;
             }
             return String.Empty;
+        }
+
+        public void ShowError(string error) {
+            MessageBox.Show(error);
         }
     }
 }

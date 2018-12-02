@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ namespace CompProj.Presenters {
         public event EventHandler StartImportEvent;
         IFileReader FileReader { get; set; }
         IImpConfigView ImpConfigView { get; set; }
+        string PathMasterFile;
+        string PathTestFile;
 
         public ImpConfigPresenter(IImpConfigView impConfigView, IFileReader fileReader) {
             ImpConfigView = impConfigView;
@@ -19,31 +22,62 @@ namespace CompProj.Presenters {
             ImpConfigView.LoadEvent += OnLoad;
         }
 
-        public void SetImportConfiguration() {
-            string pathMasterFile = ImpConfigView.GetFilePath("Master");
-            string pathTestFile = ImpConfigView.GetFilePath("Test");
-            
-            List<string> previewContent = FileReader.ReadLines(pathMasterFile, 50);
-            ImpConfigView.DisplayFilePreview(previewContent);
+        public void Run() {
+            PathMasterFile = ImpConfigView.GetFilePath("Master");
+            PathTestFile = ImpConfigView.GetFilePath("Test");
+            ShowPreview(PathMasterFile, 50);
             ImpConfigView.ShowView();
-            /*
-            IImpConfig impConfig = new ImpConfig(
-                pathMasterFile: pathMasterFile,
-                pathTestFile: pathTestFile,
-                delimiter: ImpConfigView.Delimiter,
-                rowsToSkip: ImpConfigView.RowsToSkip,
-                headersRow: ImpConfigView.HeadersRow,
+        }
+
+        private void ShowPreview(string filePath, int rowsToShow) {
+            List<string> previewContent = FileReader.ReadLines(filePath, rowsToShow);
+            ImpConfigView.DisplayFilePreview(previewContent);
+        }
+
+        private ImpConfig SetImportConfiguration() {            
+            ImpConfig impConfig = new ImpConfig(
+                pathMasterFile: PathMasterFile,
+                pathTestFile: PathTestFile,
+                delimiter: ImpConfigView.Delimiter[0],
+                rowsToSkip: int.Parse(ImpConfigView.RowsToSkip),
+                headersRow: int.Parse(ImpConfigView.HeadersRow),
                 encoding: Encoding.ASCII,
                 bufferSize: 5000
-                );       
-
-            return impConfig;*/
+                );
+                 return impConfig;
         }
 
-        public void OnLoad(object sender, EventArgs e) {
-
-            ImpConfigView.Close();
-            StartImportEvent?.Invoke(sender, e);
+        private void OnLoad(object sender, EventArgs e) {
+            ImpConfig impConfig = SetImportConfiguration();
+            IList<ValidationResult> errors = Validate(impConfig);
+            if (errors.Any()) {
+                 ImpConfigView.ShowError(CreateErrorString(errors));
+            } else {
+                StartImportEvent?.Invoke(impConfig, e);
+                ImpConfigView.Close();
+            }
         }
+
+        private string CreateErrorString(IList<ValidationResult> errors) {
+            if (errors.Count == 1) {
+                return errors[0].ErrorMessage;
+            } else {
+                StringBuilder errorBldr = new StringBuilder();
+                foreach (var item in errors) {
+                    errorBldr.Append(item.ErrorMessage);
+                    errorBldr.Append(Environment.NewLine);
+                }
+                return errorBldr.ToString();
+            }
+        }
+
+        private IList<ValidationResult> Validate(ImpConfig impConfig) {
+            ValidationContext context = new ValidationContext(impConfig, null, null);
+            IList<ValidationResult> errors = new List<ValidationResult>();
+            Validator.TryValidateObject(impConfig, context, errors, true);
+            return errors;
+        }
+
+
     }
 }

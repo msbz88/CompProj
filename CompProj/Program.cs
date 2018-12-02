@@ -25,7 +25,7 @@ namespace CompProj {
             IFileReader fileReader = new FileReader();
 
             ImpConfigPresenter impConfigPresenter = new ImpConfigPresenter(impConfigView, fileReader);
-            MainPresenter mainPresenter = new MainPresenter(mainView, impConfigPresenter, fileReader);
+            MainPresenter mainPresenter = new MainPresenter(mainView, impConfigPresenter);
 
             Application.Run();
 

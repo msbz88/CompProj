@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,7 +24,9 @@ namespace CompProj.Models {
             MasterFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathMasterFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.RowsToSkip);
             TestFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathTestFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.RowsToSkip);
             ExceptedMasterData = ExceptAsync(MasterFileContent, TestFileContent);
+            File.WriteAllLines( @"C:\Users\MSBZ\Desktop\[res.txt", ExceptedMasterData);
             ExceptedTestData = ExceptAsync(TestFileContent, MasterFileContent);
+            File.WriteAllLines(@"C:\Users\MSBZ\Desktop\]res.txt", ExceptedTestData);
         }
 
         private List<string> ExceptAsync(List<string> list1, List<string> list2) {

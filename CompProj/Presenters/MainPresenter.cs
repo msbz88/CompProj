@@ -11,28 +11,25 @@ namespace CompProj.Presenters {
     class MainPresenter {
         IMainView MainView { get; set; }
         ImpConfigPresenter ImpConfigPresenter { get; set; }
-        IImpConfig ImportConfiguration { get; set; }
-        IFileReader FileReader { get; set; }
 
-        public MainPresenter(IMainView mainView, ImpConfigPresenter impConfigPresenter, IFileReader fileReader) {
+        public MainPresenter(IMainView mainView, ImpConfigPresenter impConfigPresenter) {
             MainView = mainView;
             ImpConfigPresenter = impConfigPresenter;
-            FileReader = fileReader;
             MainView.Show();
-            MainView.OpenFileEvent += OnFileOpen;
+            MainView.OpenFileEvent += OnOpenFile;
         }
 
-        private void OnFileOpen(object sender, EventArgs e) {
-            ImpConfigPresenter.SetImportConfiguration();
-            MainView.WriteMessage("Master file: " + ImportConfiguration.PathMasterFile);
-            MainView.WriteMessage("Test file: " + ImportConfiguration.PathTestFile);
+        private void OnOpenFile(object sender, EventArgs e) {
             ImpConfigPresenter.StartImportEvent += OnStartImport;
+            ImpConfigPresenter.Run();
         }
 
         private void OnStartImport(object sender, EventArgs e) {
-            ComparisonHelper ComparisonHelper = new ComparisonHelper(FileReader, ImportConfiguration);
+            IFileReader fileReader = new FileReader();
+            ComparisonHelper ComparisonHelper = new ComparisonHelper(fileReader, (IImpConfig)sender);
             ComparisonHelper.PrepareComparison();
         }
+
 
     }
 }

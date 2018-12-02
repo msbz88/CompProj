@@ -35,8 +35,11 @@
             // 
             // richTextBoxFileContent
             // 
+            this.richTextBoxFileContent.BackColor = System.Drawing.SystemColors.Window;
+            this.richTextBoxFileContent.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.richTextBoxFileContent.Location = new System.Drawing.Point(3, 2);
             this.richTextBoxFileContent.Name = "richTextBoxFileContent";
+            this.richTextBoxFileContent.ReadOnly = true;
             this.richTextBoxFileContent.Size = new System.Drawing.Size(435, 267);
             this.richTextBoxFileContent.TabIndex = 0;
             this.richTextBoxFileContent.Text = "";
@@ -99,10 +102,11 @@
             this.buttonLoad.UseVisualStyleBackColor = true;
             this.buttonLoad.Click += new System.EventHandler(this.ButtonLoadClick);
             // 
-            // FilePreviewForm
+            // ImpConfigForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(614, 271);
             this.Controls.Add(this.buttonLoad);
             this.Controls.Add(this.labelHeaders);
@@ -112,7 +116,7 @@
             this.Controls.Add(this.labelDelimiter);
             this.Controls.Add(this.textBoxDelimiter);
             this.Controls.Add(this.richTextBoxFileContent);
-            this.Name = "FilePreviewForm";
+            this.Name = "ImpConfigForm";
             this.Text = "File Preview";
             this.ResumeLayout(false);
             this.PerformLayout();
