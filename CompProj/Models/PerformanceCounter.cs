@@ -3,19 +3,21 @@ using System.Diagnostics;
 
 namespace CompProj.Models {
     public class PerformanceCounter {
-        private Stopwatch Watch { get; set; }
-        public long StartMemory { get; private set; }
-        public long UsedMemory { get; private set; }
+        private Stopwatch Watch = new Stopwatch();
+        private double StartMemory { get; set; }
+        public double UsedMemory { get; private set; }
+        public long ElapsedTimeMs { get; private set; }
 
         public void Start() {
-            Watch = Stopwatch.StartNew();
-            StartMemory = GC.GetTotalMemory(true);
+            Watch.Reset();
+            Watch.Start();
+            StartMemory = ConvertBytesToMegabytes(GC.GetTotalMemory(true));
         }
 
         public void Stop() {
             Watch.Stop();
-            var elapsedMs = Watch.ElapsedMilliseconds;
-            UsedMemory = GC.GetTotalMemory(true);
+            ElapsedTimeMs = Watch.ElapsedMilliseconds;
+            UsedMemory = ConvertBytesToMegabytes(GC.GetTotalMemory(true));
         }
 
         public double ConvertBytesToMegabytes(long bytes) {

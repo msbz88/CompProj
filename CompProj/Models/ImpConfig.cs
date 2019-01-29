@@ -14,21 +14,20 @@ namespace CompProj.Models {
         public string PathTestFile { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "Delimiter is required")]
         public char Delimiter { get; set; }
-        [Required(AllowEmptyStrings = false, ErrorMessage = "RowsToSkip is required")]
-        public int RowsToSkip { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "Path to Master file is required")]
         public int HeadersRow { get; set; }
+        public bool IsHeadersExist { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "HeadersRow is required")]
         public Encoding Encoding { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "BufferSize is required")]
         public int BufferSize { get; set; }
 
-        public ImpConfig(string pathMasterFile, string pathTestFile, char delimiter, int rowsToSkip, int headersRow, Encoding encoding, int bufferSize) {
+        public ImpConfig(string pathMasterFile, string pathTestFile, char delimiter, int headersRow, Encoding encoding, int bufferSize) {
             PathMasterFile = pathMasterFile;
             PathTestFile = pathTestFile;
             Delimiter = delimiter;
-            RowsToSkip = rowsToSkip;
             HeadersRow = headersRow;
+            IsHeadersExist = headersRow >= 0 ? true: false;
             Encoding = encoding;
             BufferSize = bufferSize;
         }

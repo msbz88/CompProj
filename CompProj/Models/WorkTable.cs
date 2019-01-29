@@ -1,43 +1,41 @@
-﻿using CompProj.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
-namespace CompProj {
+namespace CompProj.Models {
     public class WorkTable: IWorkTable {
-        public List<string> Headers { get; private set; }
+        public Row Headers { get; private set; }
         public List<Row> Data { get; private set; }
 
         public void LoadDataAsync(List<string> data, char delimiter, bool isHeadersExist) {
-            SetHeaders(data[0], delimiter, isHeadersExist);
-            Data = ParseToTable(data, delimiter);
-        }
-
-       private void SetHeaders(string firstLine, char delimiter, bool isHeadersExist) {
             if (isHeadersExist) {
-                Headers = firstLine.Split(delimiter).ToList();
+                Headers = new Row(data[0], delimiter);
             } else {
-                int columnsCount = CountColumns(firstLine, delimiter);
-                Headers = GenerateDefaultHeaders(columnsCount);
-            }
+                int columnsCount = CountColumns(data[0], delimiter);
+                Headers = GenerateDefaultHeaders(columnsCount, delimiter);
+            }         
+            Data = ParseToTable(data.Skip(1), delimiter);
         }
 
         private int CountColumns(string line, char delimiter) {
             return line.Split(delimiter).ToList().Count;
         }     
 
-        private List<string> GenerateDefaultHeaders(int numColumns) {
-            List<string> defaultHeaders = new List<string>();
+        private Row GenerateDefaultHeaders(int numColumns, char delimiter) {
+            StringBuilder defaultHeaders = new StringBuilder();
             for (int i = 0; i < numColumns; i++) {
-                defaultHeaders.Add("Column" + i);
+                defaultHeaders.Append("Column");
+                defaultHeaders.Append(i);
+                defaultHeaders.Append(delimiter);
             }
-            return defaultHeaders;
+            return new Row(defaultHeaders.ToString().TrimEnd(delimiter), delimiter);
         }
 
-        private List<Row> ParseToTable(List<string> list, char delimiter) {
+        private List<Row> ParseToTable(IEnumerable<string> list, char delimiter) {
             List<Row> table = new List<Row>();
             foreach (var item in list) {
                 Row row = new Row(item, delimiter);

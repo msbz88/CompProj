@@ -2,6 +2,6 @@
 
 namespace CompProj.Models {
     public interface IComparisonProcessor {
-        void Compare(IWorkTable masterTable, IWorkTable testTable);
+        List<string> Execute(IWorkTable masterTable, IWorkTable testTable);
     }
 }

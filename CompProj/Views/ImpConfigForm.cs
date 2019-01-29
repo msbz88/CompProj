@@ -14,7 +14,6 @@ namespace CompProj.Views {
         public event EventHandler LoadEvent;
 
         public string Delimiter { get { return textBoxDelimiter.Text; } set { textBoxDelimiter.Text = value.ToString(); } }
-        public string RowsToSkip { get { return textBoxSkipRows.Text; } set { textBoxSkipRows.Text = value.ToString(); } }
         public string HeadersRow { get { return textBoxHeadersRow.Text; } set { textBoxHeadersRow.Text = value.ToString(); } }
 
         public ImpConfigForm() {
@@ -53,5 +52,6 @@ namespace CompProj.Views {
         public void ShowError(string error) {
             MessageBox.Show(error);
         }
+
     }
 }

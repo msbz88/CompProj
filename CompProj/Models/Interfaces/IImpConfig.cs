@@ -9,8 +9,8 @@ namespace CompProj.Models.Interfaces {
         string PathMasterFile { get; set; }
         string PathTestFile { get; set; }
         char Delimiter { get; set; }
-        int RowsToSkip { get; set; }
         int HeadersRow { get; set; }
+        bool IsHeadersExist { get; set; }
         Encoding Encoding { get; set; }
         int BufferSize { get; set; }
     }

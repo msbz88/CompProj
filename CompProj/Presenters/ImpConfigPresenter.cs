@@ -33,13 +33,12 @@ namespace CompProj.Presenters {
             List<string> previewContent = FileReader.ReadLines(filePath, rowsToShow);
             ImpConfigView.DisplayFilePreview(previewContent);
         }
-
-        private ImpConfig SetImportConfiguration() {            
+        
+        private ImpConfig SetImportConfiguration() {
             ImpConfig impConfig = new ImpConfig(
                 pathMasterFile: PathMasterFile,
                 pathTestFile: PathTestFile,
-                delimiter: ImpConfigView.Delimiter[0],
-                rowsToSkip: int.Parse(ImpConfigView.RowsToSkip),
+                delimiter: ImpConfigView.Delimiter == "t" ? '\t' : ImpConfigView.Delimiter[0],
                 headersRow: int.Parse(ImpConfigView.HeadersRow),
                 encoding: Encoding.ASCII,
                 bufferSize: 5000
@@ -54,6 +53,7 @@ namespace CompProj.Presenters {
                  ImpConfigView.ShowError(CreateErrorString(errors));
             } else {
                 StartImportEvent?.Invoke(impConfig, e);
+                ImpConfigView.LoadEvent -= OnLoad;
                 ImpConfigView.Close();
             }
         }

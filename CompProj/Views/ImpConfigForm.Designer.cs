@@ -26,9 +26,7 @@
             this.richTextBoxFileContent = new System.Windows.Forms.RichTextBox();
             this.textBoxDelimiter = new System.Windows.Forms.TextBox();
             this.labelDelimiter = new System.Windows.Forms.Label();
-            this.textBoxSkipRows = new System.Windows.Forms.TextBox();
             this.textBoxHeadersRow = new System.Windows.Forms.TextBox();
-            this.labelSkipRows = new System.Windows.Forms.Label();
             this.labelHeaders = new System.Windows.Forms.Label();
             this.buttonLoad = new System.Windows.Forms.Button();
             this.SuspendLayout();
@@ -60,33 +58,17 @@
             this.labelDelimiter.TabIndex = 2;
             this.labelDelimiter.Text = "Delimiter";
             // 
-            // textBoxSkipRows
-            // 
-            this.textBoxSkipRows.Location = new System.Drawing.Point(444, 79);
-            this.textBoxSkipRows.Name = "textBoxSkipRows";
-            this.textBoxSkipRows.Size = new System.Drawing.Size(162, 20);
-            this.textBoxSkipRows.TabIndex = 3;
-            // 
             // textBoxHeadersRow
             // 
-            this.textBoxHeadersRow.Location = new System.Drawing.Point(444, 116);
+            this.textBoxHeadersRow.Location = new System.Drawing.Point(444, 82);
             this.textBoxHeadersRow.Name = "textBoxHeadersRow";
             this.textBoxHeadersRow.Size = new System.Drawing.Size(162, 20);
             this.textBoxHeadersRow.TabIndex = 4;
             // 
-            // labelSkipRows
-            // 
-            this.labelSkipRows.AutoSize = true;
-            this.labelSkipRows.Location = new System.Drawing.Point(444, 63);
-            this.labelSkipRows.Name = "labelSkipRows";
-            this.labelSkipRows.Size = new System.Drawing.Size(68, 13);
-            this.labelSkipRows.TabIndex = 5;
-            this.labelSkipRows.Text = "Rows to skip";
-            // 
             // labelHeaders
             // 
             this.labelHeaders.AutoSize = true;
-            this.labelHeaders.Location = new System.Drawing.Point(444, 102);
+            this.labelHeaders.Location = new System.Drawing.Point(444, 68);
             this.labelHeaders.Name = "labelHeaders";
             this.labelHeaders.Size = new System.Drawing.Size(59, 13);
             this.labelHeaders.TabIndex = 6;
@@ -94,7 +76,7 @@
             // 
             // buttonLoad
             // 
-            this.buttonLoad.Location = new System.Drawing.Point(531, 164);
+            this.buttonLoad.Location = new System.Drawing.Point(531, 236);
             this.buttonLoad.Name = "buttonLoad";
             this.buttonLoad.Size = new System.Drawing.Size(75, 23);
             this.buttonLoad.TabIndex = 7;
@@ -110,9 +92,7 @@
             this.ClientSize = new System.Drawing.Size(614, 271);
             this.Controls.Add(this.buttonLoad);
             this.Controls.Add(this.labelHeaders);
-            this.Controls.Add(this.labelSkipRows);
             this.Controls.Add(this.textBoxHeadersRow);
-            this.Controls.Add(this.textBoxSkipRows);
             this.Controls.Add(this.labelDelimiter);
             this.Controls.Add(this.textBoxDelimiter);
             this.Controls.Add(this.richTextBoxFileContent);
@@ -128,9 +108,7 @@
         private System.Windows.Forms.RichTextBox richTextBoxFileContent;
         private System.Windows.Forms.TextBox textBoxDelimiter;
         private System.Windows.Forms.Label labelDelimiter;
-        private System.Windows.Forms.TextBox textBoxSkipRows;
         private System.Windows.Forms.TextBox textBoxHeadersRow;
-        private System.Windows.Forms.Label labelSkipRows;
         private System.Windows.Forms.Label labelHeaders;
         private System.Windows.Forms.Button buttonLoad;
     }

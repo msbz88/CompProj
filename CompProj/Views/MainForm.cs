@@ -12,7 +12,7 @@ using CompProj.Views.Interfaces;
 
 namespace CompProj {
     public partial class MainForm : Form, IMainView {
-        public event EventHandler OpenFileEvent;       
+        public event EventHandler OpenFileEvent;
 
         public MainForm() {
             InitializeComponent();
