@@ -10,15 +10,18 @@ namespace CompProj.Models {
     public class WorkTable: IWorkTable {
         public Row Headers { get; private set; }
         public List<Row> Data { get; private set; }
+        public int RowsCount { get; private set; }
+        public int ColumnsCount { get; private set; }
 
         public void LoadDataAsync(List<string> data, char delimiter, bool isHeadersExist) {
+            ColumnsCount = CountColumns(data[0], delimiter);
             if (isHeadersExist) {
                 Headers = new Row(data[0], delimiter);
             } else {
-                int columnsCount = CountColumns(data[0], delimiter);
-                Headers = GenerateDefaultHeaders(columnsCount, delimiter);
+                Headers = GenerateDefaultHeaders(ColumnsCount, delimiter);
             }         
             Data = ParseToTable(data.Skip(1), delimiter);
+            RowsCount = Data.Count;
         }
 
         private int CountColumns(string line, char delimiter) {
@@ -42,6 +45,14 @@ namespace CompProj.Models {
                 table.Add(row);
             }
             return table;
+        }
+
+        public List<string> GetColumn(int columnPosition) {
+            List<string> column = new List<string>();
+            foreach (var row in Data) {
+                column.Add(row.Columns[columnPosition]);
+            }
+            return column;
         }
     }
 }

@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\ColumnSummary.cs" />
     <Compile Include="Models\ComparisonHelper.cs" />
     <Compile Include="Models\ComparisonProcessor.cs" />
     <Compile Include="Models\FileReader.cs" />

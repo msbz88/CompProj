@@ -49,42 +49,25 @@ namespace CompProj.Models {
             return ComparedRow.ToString().TrimEnd(row1.Delimiter);
         }
 
-        private List<string> GetColumn(IWorkTable table, int columnPosition) {
-            List<string> column = new List<string>();
-            foreach (var row in table.Data) {
-                column.Add(row.Columns[columnPosition]);
-            }
-            return column;
-        }
-
         private List<string> GetDistinctValues(List<string> master, List<string> test) {
             return (from m in master.Distinct()
                     join t in test.Distinct() on m equals t
                     select m).ToList();
         }
 
-        private double CalculateRate(List<string> master, List<string> test, List<string> matchedValues) {
+        private double CalculateRate(int uniqueRowsMaster, int uniqueRowsTest, int matchedValues) {
             double finalRate = 0;
-            if (master.Distinct().Count() > 2 || test.Distinct().Count() > 2) {
-                var currMasterCol = Math.Round(((double)matchedValues.Count / master.Distinct().Count()) * 100, 2);
-                var currTestCol = Math.Round(((double)matchedValues.Count / test.Distinct().Count()) * 100, 2);
-                finalRate = currMasterCol > currTestCol ? currTestCol : currMasterCol;
+            if (uniqueRowsMaster > 2 || uniqueRowsTest > 2) {
+                var lowerNumber = uniqueRowsMaster > uniqueRowsTest ? uniqueRowsTest : uniqueRowsMaster;
+                finalRate = ((double)matchedValues / lowerNumber) * 100;             
             }
-            return finalRate;
-        }
-
-        private string GatherResults(List<string> masterCol, List<string> testCol, List<string> res) {
-            return " Master: " + masterCol.Distinct().Count()
-                    + " Test: " + testCol.Distinct().Count()
-                    + " Matched: " + res.Count
-                    + " M rate: " + Math.Round(((double)res.Count / masterCol.Distinct().Count()) * 100, 2)
-                    + " T rate: " + Math.Round(((double)res.Count / testCol.Distinct().Count()) * 100, 2);
+            return Math.Round(finalRate, 2);
         }
 
         private IEnumerable<string> Match(IWorkTable masterTable, IWorkTable testTable, List<int> compKeys) {
             return from m in masterTable.Data
-                   join t in testTable.Data on new {a = String.Join("", m.GetMultipleColumnsByIndex(compKeys)) }
-                   equals new { a = String.Join("", t.GetMultipleColumnsByIndex(compKeys)) }
+                   join t in testTable.Data on new {a = string.Join("", m.GetMultipleColumnsByIndex(compKeys)) }
+                   equals new { a = string.Join("", t.GetMultipleColumnsByIndex(compKeys)) }
                    select Compare(m, t, compKeys);
         }
 
@@ -105,27 +88,41 @@ namespace CompProj.Models {
             return "[" + string.Join(" ] + [", headers.GetMultipleColumnsByIndex(compKeys)) + "]";
         }
 
+        private int DistinctCount(List<string> list) {
+            return list.Distinct().Count();
+        }
+
         private List<int> Analyse(IWorkTable masterTable, IWorkTable testTable) {
-            List<string> masterCol = new List<string>();
-            List<string> testCol = new List<string>();
             List<int> compKeys = new List<int>();
-            var statToPrint = new List<string>();         
+            List<string> mColumn = new List<string>();
+            List<string> tColumn = new List<string>();
+            List<string> uColumn = new List<string>();            
+            List<ColumnSummary> columnsStat = new List<ColumnSummary>();   
         
-            for (int i = 0; i < masterTable.Headers.Columns.Count; i++) {
-                masterCol = GetColumn(masterTable, i);
-                testCol = GetColumn(testTable, i);
-                List<string> res = GetDistinctValues(masterCol, testCol);
-                double total = 0;
-                total = CalculateRate(masterCol, testCol, res);
-                if (total > 75) {
+            for (int i = 0; i < masterTable.ColumnsCount; i++) {
+                mColumn = masterTable.GetColumn(i);
+                tColumn = testTable.GetColumn(i);
+                uColumn = GetDistinctValues(mColumn, tColumn);
+
+                var mDistCount = DistinctCount(mColumn);
+                var tDistCount = DistinctCount(tColumn);
+                double uRate = 0;
+                double fRate = (double)uColumn.Count/(masterTable.RowsCount>testTable.RowsCount? testTable.RowsCount: masterTable.RowsCount);
+                uRate = CalculateRate(mDistCount, tDistCount, uColumn.Count);
+                if (uRate > 75) {
                     compKeys.Add(i);
                 }
-                statToPrint.Add("[" + masterTable.Headers.Columns[i] + "]" + GatherResults(masterCol, testCol, res));               
-                masterCol.Clear();
-                testCol.Clear();
-                res.Clear();
+                ColumnSummary columnSummary = new ColumnSummary(masterTable.Headers.Columns[i], mDistCount, tDistCount, uColumn.Count, uRate, Math.Round(fRate, 2)*100);
+                columnsStat.Add(columnSummary);              
+                mColumn.Clear();
+                tColumn.Clear();
+                uColumn.Clear();
             }
-            statToPrint.Add(GetCompColumnNames(masterTable.Headers, compKeys));     
+            var statToPrint = new List<string>();
+            foreach (var item in columnsStat) {
+                statToPrint.Add(item.ToString());
+            }
+            statToPrint.Add(GetCompColumnNames(masterTable.Headers, compKeys));
             File.WriteAllLines(@"C:\Users\MSBZ\Desktop\res.txt", statToPrint);
             return compKeys;
         }
