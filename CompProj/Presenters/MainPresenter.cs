@@ -28,8 +28,6 @@ namespace CompProj.Presenters {
             IFileReader fileReader = new FileReader();
             ComparisonHelper ComparisonHelper = new ComparisonHelper(fileReader, (IImpConfig)sender);
             ComparisonHelper.PrepareComparison();
-            MainView.OpenFileEvent -= OnOpenFile;
-            ImpConfigPresenter.StartImportEvent -= OnStartImport;
         }
 
 

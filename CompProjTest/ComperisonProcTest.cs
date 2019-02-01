@@ -27,8 +27,8 @@ namespace CompProjTest {
         }
 
         private void LoadTestData(List<string> masterInit, List<string> testInit) {
-            Master = new WorkTable();
-            Test = new WorkTable();
+            Master = new WorkTable("Master");
+            Test = new WorkTable("Test");
             Master.LoadDataAsync(masterInit, ';', true);
             Test.LoadDataAsync(masterInit, ';', true);
         }

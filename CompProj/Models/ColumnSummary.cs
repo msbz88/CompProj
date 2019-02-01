@@ -6,20 +6,26 @@ using System.Threading.Tasks;
 
 namespace CompProj.Models {
     public class ColumnSummary {
+        public int Id { get; set; }
         public string ColumnName { get; set; }
         public int MasterUniqueRows { get; set; }
         public int TestUniqueRows { get; set; }
         public int Matched { get; set; }
-        public double UniqRate { get; set; }
+        public double MatchingRate { get; set; }
+        public double UniquenessRate { get; set; }
         public double FullRate { get; set; }
+        public bool HasNulls { get; set; }
 
-        public ColumnSummary(string columnName, int masterUniqueRows, int testUniqueRows, int matched, double uniqRate, double fullRate) {
+        public ColumnSummary(int id, string columnName, int masterUniqueRows, int testUniqueRows, int matched, double matchingRate, double uniquenessRate, double fullRate, bool hasNulls) {
+            Id = id;
             ColumnName = columnName;
             MasterUniqueRows = masterUniqueRows;
             TestUniqueRows = testUniqueRows;
             Matched = matched;
-            UniqRate = uniqRate;
+            MatchingRate = matchingRate;
+            UniquenessRate = uniquenessRate;
             FullRate = fullRate;
+            HasNulls = hasNulls;
         }
 
         //public override string ToString() {
@@ -57,9 +63,13 @@ namespace CompProj.Models {
             sb.Append(";");
             sb.Append(Matched);
             sb.Append(";");
-            sb.Append(UniqRate);
+            sb.Append(MatchingRate);
+            sb.Append(";");
+            sb.Append(UniquenessRate);
             sb.Append(";");
             sb.Append(FullRate);
+            sb.Append(";");
+            sb.Append(HasNulls);
             return sb.ToString();
         }
     }

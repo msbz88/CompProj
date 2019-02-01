@@ -41,7 +41,7 @@ namespace CompProj.Presenters {
                 delimiter: ImpConfigView.Delimiter == "t" ? '\t' : ImpConfigView.Delimiter[0],
                 headersRow: int.Parse(ImpConfigView.HeadersRow),
                 encoding: Encoding.ASCII,
-                bufferSize: 5000
+                bufferSize: 10000
                 );
                  return impConfig;
         }
@@ -52,9 +52,8 @@ namespace CompProj.Presenters {
             if (errors.Any()) {
                  ImpConfigView.ShowError(CreateErrorString(errors));
             } else {
-                StartImportEvent?.Invoke(impConfig, e);
-                ImpConfigView.LoadEvent -= OnLoad;
                 ImpConfigView.Close();
+                StartImportEvent?.Invoke(impConfig, e);             
             }
         }
 

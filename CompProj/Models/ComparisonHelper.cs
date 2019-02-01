@@ -42,14 +42,21 @@ namespace CompProj.Models {
             File.WriteAllText(@"C:\Users\MSBZ\Desktop\]res.txt", TestFileContent[0]);
             File.AppendAllLines(@"C:\Users\MSBZ\Desktop\]res.txt", ExceptedTestData);
 
-            WorkTable master = new WorkTable();
-            WorkTable test = new WorkTable();
+            WorkTable master = new WorkTable("Master");
+            WorkTable test = new WorkTable("Test");
 
             perfCounter.Start();
             master.LoadDataAsync(ExceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist);          
             test.LoadDataAsync(ExceptedTestData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist);
             perfCounter.Stop();
             timings.Add("Load two files to WorkTable;" + perfCounter.ElapsedTimeMs + ";" + perfCounter.UsedMemory);
+
+            //save tables
+            //string mFile = @"C:\Users\MSBZ\Desktop\masterTable.txt";
+            //string tFile = @"C:\Users\MSBZ\Desktop\testTable.txt";
+
+            //master.SaveToFile(mFile);
+            //test.SaveToFile(tFile);
 
             File.WriteAllLines(@"C:\Users\MSBZ\Desktop\timings.txt", timings);
 

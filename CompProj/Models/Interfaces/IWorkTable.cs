@@ -2,6 +2,7 @@
 
 namespace CompProj.Models {
     public interface IWorkTable {
+        string Name { get; }
         Row Headers { get; }
         List<Row> Data { get; }
         int RowsCount { get; }
