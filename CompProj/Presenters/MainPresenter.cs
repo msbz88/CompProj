@@ -17,6 +17,7 @@ namespace CompProj.Presenters {
             ImpConfigPresenter = impConfigPresenter;
             MainView.Show();
             MainView.OpenFileEvent += OnOpenFile;
+            MainView.FormClosing += OnFormClosing;
         }
 
         private void OnOpenFile(object sender, EventArgs e) {
@@ -28,6 +29,12 @@ namespace CompProj.Presenters {
             IFileReader fileReader = new FileReader();
             ComparisonHelper ComparisonHelper = new ComparisonHelper(fileReader, (IImpConfig)sender);
             ComparisonHelper.PrepareComparison();
+        }
+
+        private void OnFormClosing(object sender, EventArgs e) {
+            MainView.OpenFileEvent -= OnOpenFile;
+            ImpConfigPresenter.StartImportEvent -= OnStartImport;
+            MainView.FormClosing -= OnFormClosing;
         }
 
 

@@ -10,12 +10,23 @@ namespace CompProj.Models {
     public class WorkTable: IWorkTable {
         public string Name { get; set; }
         public Row Headers { get; private set; }
-        public List<Row> Data { get; private set; }
+        public List<Row> Rows { get; private set; }
         public int RowsCount { get; private set; }
         public int ColumnsCount { get; private set; }
 
         public WorkTable(string name) {
             Name = name;
+        }
+
+        public WorkTable(List<Row> data, bool isHeadersExist) {
+            Rows = data;
+            RowsCount = Rows.Count;
+            ColumnsCount = data[0].Columns.Count;
+            if (isHeadersExist) {
+                Headers = data[0];
+            } else {
+                Headers = GenerateDefaultHeaders(ColumnsCount, data[0].Delimiter);
+            }
         }
 
         public void LoadDataAsync(List<string> data, char delimiter, bool isHeadersExist) {
@@ -25,8 +36,8 @@ namespace CompProj.Models {
             } else {
                 Headers = GenerateDefaultHeaders(ColumnsCount, delimiter);
             }         
-            Data = ParseToTable(data.Skip(1), delimiter);
-            RowsCount = Data.Count;
+            Rows = ParseToTable(data.Skip(1), delimiter);
+            RowsCount = Rows.Count;
         }
 
         private int CountColumns(string line, char delimiter) {
@@ -49,22 +60,31 @@ namespace CompProj.Models {
         }
 
         public List<string> GetColumn(int columnPosition) {
-            List<string> column = new List<string>();
-            foreach (var row in Data) {
-                column.Add(row.Columns[columnPosition]);
-            }
-            return column;
+            return Rows.Select(r => r.Columns[columnPosition]).ToList();
         }
 
         public void SaveToFile(string filePath) {
             List<string> result = new List<string>();
             var delimiter = Headers.Delimiter.ToString();
-            var headres = "Id" + delimiter + string.Join(delimiter, Headers.Columns);
+            var headres = "RowNum"+delimiter+"Id" + delimiter + string.Join(delimiter, Headers.Columns);
             result.Add(headres);
-            foreach (var item in Data) {
+            foreach (var item in Rows) {
                 result.Add(item.ToString());
             }
             File.WriteAllLines(filePath, result);
+        }
+
+        public void ApplyRowNumberInGroup(List<int> compKeys) {          
+            var query = from r in Rows
+                        group r by r.MaterialiseKey(compKeys) into g
+                        where g.Count() > 1
+                        select g;
+            foreach (var group in query) {
+                int RowNumber = 0;
+                foreach (var row in group) {
+                    row.RowGroupNumber = RowNumber++;
+                }
+            }
         }
     }
 }

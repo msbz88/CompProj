@@ -7,25 +7,29 @@ using System.Threading.Tasks;
 namespace CompProj.Models {
     public class ColumnSummary {
         public int Id { get; set; }
-        public string ColumnName { get; set; }
+        public string Name { get; set; }
         public int MasterUniqueRows { get; set; }
         public int TestUniqueRows { get; set; }
         public int Matched { get; set; }
         public double MatchingRate { get; set; }
         public double UniquenessRate { get; set; }
-        public double FullRate { get; set; }
-        public bool HasNulls { get; set; }
+        public double UniqMatchRate { get; set; }
+        public bool IsNumeric { get; set; }
+        public bool IsDouble { get; set; }
+        public bool IsHasNulls { get; set; }
 
-        public ColumnSummary(int id, string columnName, int masterUniqueRows, int testUniqueRows, int matched, double matchingRate, double uniquenessRate, double fullRate, bool hasNulls) {
+        public ColumnSummary(int id, string name, int masterUniqueRows, int testUniqueRows, int matched, double matchingRate, double uniquenessRate, double uniqMatchRate, bool isNumeric, bool isDouble, bool isHasNulls) {
             Id = id;
-            ColumnName = columnName;
+            Name = name;
             MasterUniqueRows = masterUniqueRows;
             TestUniqueRows = testUniqueRows;
             Matched = matched;
             MatchingRate = matchingRate;
             UniquenessRate = uniquenessRate;
-            FullRate = fullRate;
-            HasNulls = hasNulls;
+            UniqMatchRate = uniqMatchRate;
+            IsNumeric = isNumeric;
+            IsDouble = isDouble;
+            IsHasNulls = isHasNulls;
         }
 
         //public override string ToString() {
@@ -53,9 +57,7 @@ namespace CompProj.Models {
 
         public override string ToString() {
             StringBuilder sb = new StringBuilder();
-            sb.Append("[");
-            sb.Append(ColumnName);
-            sb.Append("]");
+            sb.Append(Name);
             sb.Append(";");
             sb.Append(MasterUniqueRows);
             sb.Append(";");
@@ -67,9 +69,13 @@ namespace CompProj.Models {
             sb.Append(";");
             sb.Append(UniquenessRate);
             sb.Append(";");
-            sb.Append(FullRate);
+            sb.Append(UniqMatchRate);
             sb.Append(";");
-            sb.Append(HasNulls);
+            sb.Append(IsNumeric);
+            sb.Append(";");
+            sb.Append(IsDouble);
+            sb.Append(";");
+            sb.Append(IsHasNulls);
             return sb.ToString();
         }
     }

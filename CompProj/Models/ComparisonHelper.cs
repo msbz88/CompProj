@@ -9,10 +9,6 @@ using CompProj.Models.Interfaces;
 namespace CompProj.Models {
     public class ComparisonHelper {
         IFileReader FileReader { get; set; }
-        public List<string> MasterFileContent { get; private set;}
-        public List<string> TestFileContent { get; private set;}
-        public List<string> ExceptedMasterData { get; private set;}
-        public List<string> ExceptedTestData { get; private set;}
         IImpConfig ImportConfiguration { get; set; }
 
         PerformanceCounter perfCounter = new PerformanceCounter();
@@ -25,22 +21,18 @@ namespace CompProj.Models {
 
         public async void PrepareComparison() {
             perfCounter.Start();
-            MasterFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathMasterFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.HeadersRow);
-            TestFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathTestFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.HeadersRow);
+            var MasterFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathMasterFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.HeadersRow);
+            var TestFileContent = await FileReader.ReadAllLinesAsync(ImportConfiguration.PathTestFile, ImportConfiguration.Encoding, ImportConfiguration.BufferSize, ImportConfiguration.HeadersRow);
             perfCounter.Stop();
-            timings.Add("Read two init files;" + perfCounter.ElapsedTimeMs + ";" + perfCounter.UsedMemory);
+            timings.Add("Read two init files;" + perfCounter.ElapsedTimeMs);
 
             perfCounter.Start();
-            ExceptedMasterData = ExceptAsync(MasterFileContent, TestFileContent, ImportConfiguration.IsHeadersExist);
-            ExceptedTestData = ExceptAsync(TestFileContent, MasterFileContent, ImportConfiguration.IsHeadersExist);
+            var ExceptedMasterData = ExceptAsync(MasterFileContent, TestFileContent, ImportConfiguration.IsHeadersExist);
+            var ExceptedTestData = ExceptAsync(TestFileContent, MasterFileContent, ImportConfiguration.IsHeadersExist);
+            MasterFileContent.Clear();
+            TestFileContent.Clear();
             perfCounter.Stop();
-            timings.Add("Except two files;" + perfCounter.ElapsedTimeMs + ";" + perfCounter.UsedMemory);
-
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\[res.txt", MasterFileContent[0]);
-            File.AppendAllLines( @"C:\Users\MSBZ\Desktop\[res.txt", ExceptedMasterData);        
-
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\]res.txt", TestFileContent[0]);
-            File.AppendAllLines(@"C:\Users\MSBZ\Desktop\]res.txt", ExceptedTestData);
+            timings.Add("Except two files;" + perfCounter.ElapsedTimeMs);
 
             WorkTable master = new WorkTable("Master");
             WorkTable test = new WorkTable("Test");
@@ -48,8 +40,10 @@ namespace CompProj.Models {
             perfCounter.Start();
             master.LoadDataAsync(ExceptedMasterData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist);          
             test.LoadDataAsync(ExceptedTestData, ImportConfiguration.Delimiter, ImportConfiguration.IsHeadersExist);
+            ExceptedMasterData.Clear();
+            ExceptedTestData.Clear();
             perfCounter.Stop();
-            timings.Add("Load two files to WorkTable;" + perfCounter.ElapsedTimeMs + ";" + perfCounter.UsedMemory);
+            timings.Add("Load two files to WorkTable;" + perfCounter.ElapsedTimeMs);
 
             //save tables
             //string mFile = @"C:\Users\MSBZ\Desktop\masterTable.txt";

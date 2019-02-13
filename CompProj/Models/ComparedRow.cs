@@ -9,6 +9,7 @@ namespace CompProj.Models {
         public int MasterRowID { get; set; }
         public int TestRowID { get; set; }
         public int Diff { get; set; }
+
         public ComparedRow(int id, int masterRowID, int testRowID, int diff, string data, char delimiter) : base(id, data, delimiter) {
             MasterRowID = masterRowID;
             TestRowID = testRowID;

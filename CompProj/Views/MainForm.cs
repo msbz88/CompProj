@@ -25,6 +25,5 @@ namespace CompProj {
         public void WriteMessage(string messages) {
             richTextBoxMessages.AppendText(messages + Environment.NewLine);
         }
-
     }
 }

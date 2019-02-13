@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="Models\ColumnSummary.cs" />
     <Compile Include="Models\ComparedRow.cs" />
+    <Compile Include="Models\CompareTable.cs" />
     <Compile Include="Models\ComparisonHelper.cs" />
     <Compile Include="Models\ComparisonProcessor.cs" />
     <Compile Include="Models\FileReader.cs" />
