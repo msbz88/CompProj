@@ -8,35 +8,28 @@ using CompProj.Models;
 using CompProj.Models.Interfaces;
 
 namespace CompProj.Presenters {
-    class MainPresenter {
+    public class MainPresenter {
         IMainView MainView { get; set; }
         ImpConfigPresenter ImpConfigPresenter { get; set; }
 
         public MainPresenter(IMainView mainView, ImpConfigPresenter impConfigPresenter) {
             MainView = mainView;
             ImpConfigPresenter = impConfigPresenter;
-            MainView.Show();
+            ImpConfigPresenter.StartImportEvent += OnStartImport;
             MainView.OpenFileEvent += OnOpenFile;
-            MainView.FormClosing += OnFormClosing;
+            MainView.Show();
         }
 
-        private void OnOpenFile(object sender, EventArgs e) {
-            ImpConfigPresenter.StartImportEvent += OnStartImport;
+        public void OnOpenFile(object sender, EventArgs e) {
             ImpConfigPresenter.Run();
         }
 
         private void OnStartImport(object sender, EventArgs e) {
+            ImpConfigPresenter.StartImportEvent -= OnStartImport;
             IFileReader fileReader = new FileReader();
             ComparisonHelper ComparisonHelper = new ComparisonHelper(fileReader, (IImpConfig)sender);
             ComparisonHelper.PrepareComparison();
         }
-
-        private void OnFormClosing(object sender, EventArgs e) {
-            MainView.OpenFileEvent -= OnOpenFile;
-            ImpConfigPresenter.StartImportEvent -= OnStartImport;
-            MainView.FormClosing -= OnFormClosing;
-        }
-
 
     }
 }

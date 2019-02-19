@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CompProj.Models {
     public interface IWorkTable {
@@ -11,5 +12,6 @@ namespace CompProj.Models {
         void SaveToFile(string filePath);
         void ApplyRowNumberInGroup(List<int> compKeys);
         List<string> GetColumn(int columnPosition);
+        List<string> GetDistinctColumnValues(int columnPosition);
     }
 }

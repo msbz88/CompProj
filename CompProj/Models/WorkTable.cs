@@ -63,6 +63,10 @@ namespace CompProj.Models {
             return Rows.Select(r => r.Columns[columnPosition]).ToList();
         }
 
+        public List<string> GetDistinctColumnValues(int columnPosition) {
+            return Rows.Select(r => r.Columns[columnPosition]).Distinct().ToList();
+        }
+
         public void SaveToFile(string filePath) {
             List<string> result = new List<string>();
             var delimiter = Headers.Delimiter.ToString();
@@ -76,8 +80,10 @@ namespace CompProj.Models {
 
         public void ApplyRowNumberInGroup(List<int> compKeys) {          
             var query = from r in Rows
-                        group r by r.MaterialiseKey(compKeys) into g
+                        group r by r.MaterialiseKey(compKeys)
+                        into g
                         where g.Count() > 1
+                        //orderby g.Select(r=>r.MaterialiseKey(orderBy))                       
                         select g;
             foreach (var group in query) {
                 int RowNumber = 0;

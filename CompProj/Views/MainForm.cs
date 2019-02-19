@@ -8,11 +8,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using CompProj.Presenters;
 using CompProj.Views.Interfaces;
 
 namespace CompProj {
     public partial class MainForm : Form, IMainView {
-        public event EventHandler OpenFileEvent;
+        public EventHandler OpenFileEvent { get; set; }
 
         public MainForm() {
             InitializeComponent();

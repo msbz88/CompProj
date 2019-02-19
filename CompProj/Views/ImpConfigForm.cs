@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using CompProj.Views.Interfaces;
 
 namespace CompProj.Views {
     public partial class ImpConfigForm : Form, IImpConfigView {
-        public event EventHandler LoadEvent;
+        public EventHandler FileLoadEvent { get; set; }
 
         public string Delimiter { get { return textBoxDelimiter.Text; } set { textBoxDelimiter.Text = value.ToString(); } }
         public string HeadersRow { get { return textBoxHeadersRow.Text; } set { textBoxHeadersRow.Text = value.ToString(); } }
@@ -25,7 +19,7 @@ namespace CompProj.Views {
         }
 
         private void ButtonLoadClick(object sender, EventArgs e) {
-            LoadEvent?.Invoke(sender, e);
+            FileLoadEvent?.Invoke(sender, e);
         }
 
         public void DisplayFilePreview(List<string> fileContent) {
@@ -46,7 +40,7 @@ namespace CompProj.Views {
             if (openFileDialog.ShowDialog() == DialogResult.OK) {
                 return openFileDialog.FileName;
             }
-            return String.Empty;
+            return string.Empty;
         }
 
         public void ShowError(string error) {

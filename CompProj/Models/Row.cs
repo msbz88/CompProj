@@ -18,11 +18,11 @@ namespace CompProj {
             Columns = data.Split(Delimiter).ToList();
         }
 
-        public string MaterialiseKey(List<int> positions) {
+        public int MaterialiseKey(List<int> positions) {
             var query = Columns.Select((f, i) => new { f, i })
                 .Where(x => positions.Contains(x.i))
                 .Select(x => x.f);
-            return string.Join(";", query);
+            return string.Join(";", query).GetHashCode();
         }
 
         public List<string> ColumnIndexIn(List<int> positions) {

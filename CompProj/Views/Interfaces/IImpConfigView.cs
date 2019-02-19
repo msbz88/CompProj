@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CompProj.Views.Interfaces {
     public interface IImpConfigView {
-        event EventHandler LoadEvent;
+        EventHandler FileLoadEvent { get; set; }
         string Delimiter { get; set; }
         string HeadersRow { get; set; }
         void ShowError(string error);

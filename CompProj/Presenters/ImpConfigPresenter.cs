@@ -10,7 +10,7 @@ using CompProj.Views.Interfaces;
 
 namespace CompProj.Presenters {
     public class ImpConfigPresenter {
-        public event EventHandler StartImportEvent;
+        public EventHandler StartImportEvent { get; set; }
         IFileReader FileReader { get; set; }
         IImpConfigView ImpConfigView { get; set; }
         string PathMasterFile;
@@ -18,8 +18,8 @@ namespace CompProj.Presenters {
 
         public ImpConfigPresenter(IImpConfigView impConfigView, IFileReader fileReader) {
             ImpConfigView = impConfigView;
+            ImpConfigView.FileLoadEvent += OnFileLoad;
             FileReader = fileReader;
-            ImpConfigView.LoadEvent += OnLoad;
         }
 
         public void Run() {
@@ -46,12 +46,13 @@ namespace CompProj.Presenters {
                  return impConfig;
         }
 
-        private void OnLoad(object sender, EventArgs e) {
+        public void OnFileLoad(object sender, EventArgs e) {
             ImpConfig impConfig = SetImportConfiguration();
             IList<ValidationResult> errors = Validate(impConfig);
             if (errors.Any()) {
                  ImpConfigView.ShowError(CreateErrorString(errors));
             } else {
+                ImpConfigView.FileLoadEvent -= OnFileLoad;
                 ImpConfigView.Close();
                 StartImportEvent?.Invoke(impConfig, e);             
             }
