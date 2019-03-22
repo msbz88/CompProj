@@ -8,7 +8,7 @@ using System.Windows.Forms;
 namespace CompProj.Views.Interfaces {
     public interface IMainView {
         EventHandler OpenFileEvent { get; set; }
-        void WriteMessage(string message);
+        void WriteMessage(string header, string message);
         void Show();
         event FormClosingEventHandler FormClosing;
         void Dispose();

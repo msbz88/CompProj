@@ -7,72 +7,78 @@ using System.Threading.Tasks;
 
 namespace CompProj.Models {
     public class ComparisonProcessor /*: IComparisonProcessor */{
-        StringBuilder ComparedRowSB = new StringBuilder();
-        PerformanceCounter perfCounter = new PerformanceCounter();
-        List<string> timings = new List<string>();
+        List<string> ComparedRowSB = new List<string>();
+        PerformanceCounter PerfCounter;
         CompareTable CompareTable;
+        IWorkTable MasterTable;
+        IWorkTable TestTable;
+        string Delimiter;
+        List<ColumnSummary> BaseStat;
+        List<int> PivotKeysIndexes { get; set; }
+        public ComparisonProcessor(PerformanceCounter perfCounter) {
+            PerfCounter = perfCounter;
+        }
 
-        public void Execute(IWorkTable masterTable, IWorkTable testTable) {
+        public async Task Execute(IWorkTable masterTable, IWorkTable testTable) {
+            MasterTable = masterTable;
+            TestTable = testTable;
+            Delimiter = masterTable.Delimiter;
             //gather base stat  
-            perfCounter.Start();
-            var baseStat = GatherStatistics(masterTable, testTable);
-            perfCounter.Stop();
-            timings.Add("Gather stat;" + perfCounter.ElapsedTimeMs);
+            PerfCounter.Start();
+            BaseStat = GatherStatistics(masterTable.Rows, testTable.Rows);
+            PerfCounter.Stop("Base Gather Stat");
             //analyse
-            File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", baseStat.Select(r => r.ToString()));
-            var pivotKeysIndexes = AnalyseForPivotKey(baseStat);
-            File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(pivotKeysIndexes)));
-            //get uniq records with base key      
-            perfCounter.Start();
-            var groupedMaster = Group(masterTable, pivotKeysIndexes);
-            var groupedTest = Group(testTable, pivotKeysIndexes);
-            perfCounter.Stop();
-            timings.Add("GetUniqueRows;" + perfCounter.ElapsedTimeMs);
-            //base comparison
-            perfCounter.Start();
-            var baseCompare = MatchUniqueRows(groupedMaster.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList(), groupedTest.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList(), pivotKeysIndexes);
-            CompareTable = new CompareTable(pivotKeysIndexes, masterTable, baseCompare.ToList());
-            perfCounter.Stop();
-            timings.Add("MatchUniqueRows;" + perfCounter.ElapsedTimeMs);
+            File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
+            PerfCounter.Start();
+            PivotKeysIndexes = await Task.Run(() => AnalyseForPivotKey(masterTable.Rows, BaseStat));
+            PerfCounter.Stop("AnalyseForPivotKey");
+            File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
             //non-unique
-            var groupsM = groupedMaster.Where(r => r.Value.Count() > 1);
-            var groupsT = groupedTest.Where(r => r.Value.Count() > 1);
-            var groups = from m in groupsM join t in groupsT on m.Key equals t.Key select m.Key;
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\groups.txt", string.Join(";", masterTable.Headers.ColumnIndexIn(pivotKeysIndexes)) + Environment.NewLine);
-            File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groups.txt", groups.Select(r=>r.ToString()));
+            PerfCounter.Start();
+            var groupsM = Group(masterTable.Rows, PivotKeysIndexes);
+            var groupsT = Group(testTable.Rows, PivotKeysIndexes);
+            PerfCounter.Stop("Base Group");
+            File.WriteAllText(@"C:\Users\MSBZ\Desktop\groups.txt", string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
             File.WriteAllText(@"C:\Users\MSBZ\Desktop\nonUStat.txt", "");
+            PerfCounter.Start();
+            var compareHeaders = masterTable.Headers.ColumnIndexIn(PivotKeysIndexes).ToList();
+            compareHeaders.AddRange(masterTable.Headers.Data);
+            CompareTable = new CompareTable(masterTable, testTable, PivotKeysIndexes);
+            var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
+            var uTestRows = groupsT.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
+            CompareTable.Data.AddRange(Match(uMasterRows, uTestRows, PivotKeysIndexes));
+            PerfCounter.Stop("Preparison");
+
+            PerfCounter.Start();
+            var mRemainings = groupsM.Where(r => r.Value.Count() > 1).ToList();
+            var tRemainings = groupsT.Where(r => r.Value.Count() > 1).ToList();
             int run = 0;
-            List<string> remainM = new List<string>();
-            List<string> remainT = new List<string>();
-            perfCounter.Start();
-            foreach (var key in groups) {
-                var m = new WorkTable(groupsM.Where(r => r.Key == key).SelectMany(r => r.Value).ToList(), false);
-                var t = new WorkTable(groupsT.Where(r => r.Key == key).SelectMany(r => r.Value).ToList(), false);
-                var initCompKeys = new List<int>(pivotKeysIndexes);
-                ProcessGroup(m, t, initCompKeys, run);
-                run++;
+            var groups = from m in mRemainings
+                         join t in tRemainings on m.Key equals t.Key
+                         select ProcessGroup(m.Value, t.Value, ref run);
+            var res = groups.SelectMany(r => r);
+            if (res.Any()) {
+                CompareTable.Data.AddRange(res);
             }
-            perfCounter.Stop();
-            timings.Add("Proccess;" + perfCounter.ElapsedTimeMs);
+            File.WriteAllText(@"C:\Users\MSBZ\Desktop\run.txt", run.ToString());
+            PerfCounter.Stop("Process");
             //extra
-            List<string> extra = new List<string>();
-            var delimiter = masterTable.Headers.Delimiter;
-            perfCounter.Start();
-            extra.Add("Id" + delimiter + "Version" + delimiter + string.Join(delimiter.ToString(), masterTable.Headers.Columns));
+            PerfCounter.Start();
             var masterExtra = GetExtraRows(masterTable, CompareTable.Data.Select(r => r.MasterRowID).Distinct());
             var testExtra = GetExtraRows(testTable, CompareTable.Data.Select(r => r.TestRowID).Distinct());
-            extra.AddRange(masterExtra);
-            extra.AddRange(testExtra);
-            perfCounter.Stop();
-            timings.Add("Extra;" + perfCounter.ElapsedTimeMs);
-            if (extra.Count > 1) {
-                File.WriteAllLines(@"C:\Users\MSBZ\Desktop\extra.txt", extra);
+            CompareTable.AddExtraData(masterExtra);
+            CompareTable.AddExtraData(testExtra);
+            PerfCounter.Stop("Extra");
+            if (CompareTable.Extra.Count > 0) {
+                File.WriteAllLines(@"C:\Users\MSBZ\Desktop\extra.txt", CompareTable.Extra);
             }
             //save to file
             string comparedRecordsFile = @"C:\Users\MSBZ\Desktop\comparedRecords.txt";
-            SaveSummary(masterTable.RowsCount, testTable.RowsCount, CompareTable.Data.Count, extra.Count - 1);
-            CompareTable.SaveToFile(comparedRecordsFile, pivotKeysIndexes, masterTable);
-            File.AppendAllLines(@"C:\Users\MSBZ\Desktop\timings.txt", timings);
+            SaveSummary(masterTable.RowsCount, testTable.RowsCount, CompareTable.Data.Count, CompareTable.Extra.Count);
+            PerfCounter.Start();
+            CompareTable.SaveToFile(comparedRecordsFile);
+            PerfCounter.Stop("Save comparison");
+            PerfCounter.SaveAllResults();
         }
 
         private void SaveSummary(int mRowsCount, int tRowsCount, int compRowsCount, int extraRowsCount) {
@@ -81,190 +87,251 @@ namespace CompProj.Models {
                 "Master: " + mRowsCount + ";Test: " + tRowsCount + ";Act diff: " + actRowsDiff + ";Compared: " + compRowsCount + ";Extra: " + extraRowsCount);
         }
 
-        private void ProcessGroup(IWorkTable masterTable, IWorkTable testTable, List<int> compKeysIndexes, double run) {
-            var stat = GatherStatistics(masterTable, testTable);           
-            var newKeysIndexes = AnalyseInGroup(stat);
-            File.AppendAllLines(@"C:\Users\MSBZ\Desktop\nonUStat.txt", stat.Select(r => run + ";" + r.ToString() + ";" + string.Join("+", masterTable.Headers.ColumnIndexIn(newKeysIndexes))));
-            if (newKeysIndexes.Count == 0) {
-                masterTable.ApplyRowNumberInGroup(compKeysIndexes);
-                testTable.ApplyRowNumberInGroup(compKeysIndexes);
-                var newCompare = Match(masterTable.Rows, testTable.Rows, compKeysIndexes);
-                CompareTable.Data.AddRange(newCompare);
-            } else {
-                compKeysIndexes.AddRange(newKeysIndexes);
-                var grpMaster = Group(masterTable, compKeysIndexes);
-                var grpTest = Group(testTable, compKeysIndexes);
-                var uMasterRows = grpMaster.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
-                var uTestRows = grpTest.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
-                var newCompare = MatchUniqueRows(uMasterRows, uTestRows, compKeysIndexes);
-                CompareTable.Data.AddRange(newCompare);
-                var mRemainings = grpMaster.Where(r => r.Value.Count() > 1);
-                var tRemainings = grpTest.Where(r => r.Value.Count() > 1);
-                if(mRemainings.Count() > 0 && tRemainings.Count() > 0) {
-                    var groups = from mRem in mRemainings join tRem in tRemainings on mRem.Key equals tRem.Key select mRem.Key;
-                    foreach (var item in groups) {
-                        var m = new WorkTable(mRemainings.Where(r => r.Key == item).SelectMany(r => r.Value).ToList(), false);
-                        var t = new WorkTable(tRemainings.Where(r => r.Key == item).SelectMany(r => r.Value).ToList(), false);
-                        var inCompKeys = new List<int>(compKeysIndexes);
-                        ProcessGroup(m, t, inCompKeys, run + 0.1);
+        private List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows, ref int run) {
+            var comparedRows = new List<ComparedRow>();
+            //masterTable.SaveToFile(@"C:\Users\MSBZ\Desktop\tempMaster.txt");
+            //testTable.SaveToFile(@"C:\Users\MSBZ\Desktop\tempTest.txt");
+            //var stat = GatherStatistics(masterRows, testRows);
+            //var newKeysIndexes = AnalyseInGroup(stat);
+            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\nonUStat.txt", stat.Select(r => run + ";" + r.ToString()));
+            //if (newKeysIndexes.Count == 0) {
+            //    ApplyRowNumberInGroup(masterRows, compKeysIndexes);
+            //    ApplyRowNumberInGroup(testRows, compKeysIndexes);
+            //    comparedRows.AddRange(Match(masterRows, testRows, compKeysIndexes));
+            //} else {
+
+            run += masterRows.Count;
+
+            var allreadyMatched = new List<int>();
+            foreach (var masterRow in masterRows) {
+                var testRowsChunk = testRows.Where(item => !allreadyMatched.Contains(item.Id)).ToList();
+                Row testRow;
+                if (testRowsChunk.Count == 0) {
+                    break;
+                } else if (testRowsChunk.Count == 1) {
+                    testRow = testRowsChunk.First();                  
+                } else {
+                    testRow = MatchSingle(masterRow, testRowsChunk);
+                }
+                comparedRows.Add(Compare(masterRow, testRow));
+                allreadyMatched.Add(testRow.Id);
+            }
+
+            //var grpMaster = Group(masterRows, newKeysIndexes);
+            //var grpTest = Group(testRows, newKeysIndexes);
+            //var uMasterRows = grpMaster.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
+            //var uTestRows = grpTest.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
+            //comparedRows.AddRange(Match(uMasterRows, uTestRows, newKeysIndexes));
+            //var mRemainings = grpMaster.Where(r => r.Value.Count() > 1);
+            //var tRemainings = grpTest.Where(r => r.Value.Count() > 1);
+            //if (mRemainings.Count() > 0 && tRemainings.Count() > 0) {
+            //    var groups = from mRem in mRemainings join tRem in tRemainings on mRem equals tRem select mRem;
+            //    foreach (var item in groups) {
+            //        ProcessGroup(mRemainings.SelectMany(row => row.Value).ToList(), tRemainings.SelectMany(row => row.Value).ToList(), newKeysIndexes, run + 0.01);
+            //    }
+            //}
+            //}
+            return comparedRows;
+        }
+
+        private Row MatchSingle(Row masterRow, List<Row> testRows) {
+            Dictionary<int, List<int>> map = new Dictionary<int, List<int>>();
+            int index = 0;
+            foreach (var testRow in testRows) {
+                map.Add(index, new List<int>());
+                for (int columnIndex = 0; columnIndex < testRow.Data.Length; columnIndex++) {
+                    if (masterRow.Data[columnIndex] != testRow.Data[columnIndex]) {
+                        map[index].Add(columnIndex);
                     }
                 }
-            }         
+                index++;
+            }
+            int min = map.Min(item => item.Value.Count);
+            var bestMatch = map.Where(item => item.Value.Count == min).ToList();
+            int matchedRowIndex = -1;
+            if (bestMatch.Count == 1) {
+                matchedRowIndex = bestMatch.First().Key;
+                return testRows[matchedRowIndex];
+            } else {
+                var isSameColumns = min == bestMatch.SelectMany(item => item.Value).Distinct().Count();
+                if (isSameColumns) {
+                    matchedRowIndex = SameColumnsDiffHandler(bestMatch.Select(item => item.Value).First(), masterRow, testRows);
+                } else {
+                    //matchedRowIndex = DiffColumnsDiffHandler();
+                    matchedRowIndex = 0;
+                }              
+                //File.WriteAllText(@"C:\Users\MSBZ\Desktop\mRow.txt", string.Join(";", masterRow.Data));
+                //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\testRows.txt", testRows.Select(i => string.Join(";", i.Data)));
+                //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\map.txt", map.Select(i => string.Join(";", i.Value)));
+                return testRows[matchedRowIndex];
+            }       
+        }
+
+        private int SameColumnsDiffHandler(List<int> diffColumns, Row masterRow, List<Row> testRows) {
+            int index = -1;
+            var queryStat = 
+                    from col in diffColumns
+                    join stat in BaseStat on col equals stat.Id
+                    select stat;
+            if(queryStat.All(item => item.IsString)) {
+                index = 0;
+            } else {
+                var numFields = queryStat.Where(item => !item.IsString).Select(item => item.Id);
+                var mRowNumFileds = masterRow.ColumnIndexIn(numFields).ToList();
+                var tRowsNumFields = testRows.Select(item => item.ColumnIndexIn(numFields)).ToList();
+                Dictionary<int, List<double>> map = new Dictionary<int, List<double>>();
+                for (int rowsIndex = 0; rowsIndex < tRowsNumFields.Count; rowsIndex++) {               
+                    map.Add(rowsIndex, new List<double>());
+                    for (int columnsIndex = 0; columnsIndex < mRowNumFileds.Count; columnsIndex++) {
+                        double mNum = 0;
+                        var itemM = mRowNumFileds[columnsIndex];
+                        double.TryParse(itemM, out mNum);
+                        
+                        double tNum = 0;
+                        var itemT = tRowsNumFields[rowsIndex][columnsIndex];
+                        double.TryParse(itemT, out tNum);
+
+                        var diff = mNum - tNum;
+                        map[rowsIndex].Add(diff);
+                    }
+                }
+                var min = map.Min(item => item.Value.Sum());
+                index = map.Where(item => item.Value.Sum() == min).First().Key;
+            }
+            return index;
+        }
+
+        private int DiffColumnsDiffHandler() {
+            int index = 0;
+            return index;
+        }
+
+        public void ApplyRowNumberInGroup(IEnumerable<Row> rows, List<int> compKeys) {
+            var query = from r in rows
+                        group r by r.GetValuesHashCode(compKeys)
+                        into g
+                        where g.Count() > 1
+                        //orderby g.Select(r=>r.MaterialiseKey(orderBy))                       
+                        select g;
+            foreach (var group in query) {
+                int RowNumber = 0;
+                foreach (var row in group) {
+                    row.GroupId = RowNumber++;
+                }
+            }
         }
 
         private ComparedRow Compare(Row masterRow, Row testRow) {
             ComparedRowSB.Clear();
             int rowDiff = 0;
-            for (int i = 0; i < masterRow.Columns.Count; i++) {
-                if (masterRow.Columns[i] == testRow.Columns[i]) {
-                    ComparedRowSB.Append("0");
-                    ComparedRowSB.Append(masterRow.Delimiter);
+            var idColumnsData = string.Join(Delimiter, masterRow.ColumnIndexIn(PivotKeysIndexes));
+            for (int i = 0; i < masterRow.Data.Count(); i++) {
+                if (masterRow.Data[i] == testRow.Data[i]) {
+                    ComparedRowSB.Add("0");
+                    //ComparedRowSB.Append(Delimiter);
                 } else {
-                    ComparedRowSB.Append(masterRow.Columns[i]);
-                    ComparedRowSB.Append(" | ");
-                    ComparedRowSB.Append(testRow.Columns[i]);
-                    ComparedRowSB.Append(masterRow.Delimiter);
+                    ComparedRowSB.Add(masterRow.Data[i] + " | " + testRow.Data[i]);
+                    //ComparedRowSB.Add(" | ");
+                    //ComparedRowSB.Add(testRow.Data.ElementAt(i));
+                    //ComparedRowSB.Append(Delimiter);
                     rowDiff++;
                 }
             }
-            return new ComparedRow(0, masterRow.Id, testRow.Id, rowDiff, ComparedRowSB.ToString(), masterRow.Delimiter);
+            return new ComparedRow(0, masterRow.Id, testRow.Id, rowDiff, idColumnsData, ComparedRowSB.ToArray());
         }
 
         private IEnumerable<string> GetExtraRows(IWorkTable table, IEnumerable<int> comparedId) {
             var filter = table.Rows.Select(r => r.Id).Except(comparedId);
-            var delimiter = table.Headers.Delimiter.ToString();
             return from r in table.Rows
                    join f in filter on r.Id equals f
-                   select r.Id + delimiter + table.Name + delimiter + string.Join(delimiter, r.Columns);
-        }
-
-        private List<string> GetDistinctValues(IEnumerable<string> master, IEnumerable<string> test) {
-            return (from m in master.Distinct()
-                    join t in test.Distinct() on m equals t
-                    select m).ToList();
-        }
-
-        private double CalculateRate(int uniqueRowsMaster, int uniqueRowsTest, int matchedValues) {
-            double finalRate = 0;
-            var lowerNumber = uniqueRowsMaster > uniqueRowsTest ? uniqueRowsMaster : uniqueRowsTest;
-            finalRate = ((double)matchedValues / lowerNumber) * 100;
-            return Math.Round(finalRate, 2);
+                   select r.Id + table.Delimiter + table.Name + table.Delimiter + string.Join(table.Delimiter, r.Data);
         }
 
         private IEnumerable<ComparedRow> Match(IEnumerable<Row> masterRows, IEnumerable<Row> testRows, List<int> compKeys) {
             return from m in masterRows
-                   join t in testRows on new { CompositeKey = m.MaterialiseKey(compKeys), RowNumber = m.RowGroupNumber }
-                   equals new { CompositeKey = t.MaterialiseKey(compKeys), RowNumber = t.RowGroupNumber }
+                   join t in testRows on new { HashKey = m.GetValuesHashCode(compKeys), RowNumber = m.GroupId }
+                   equals new { HashKey = t.GetValuesHashCode(compKeys), RowNumber = t.GroupId }
                    select Compare(m, t);
-        }
-
-        private IEnumerable<ComparedRow> MatchUniqueRows(IEnumerable<Row> masterRows, IEnumerable<Row> testRows, List<int> uniqKey) {
-            return from m in masterRows
-                   join t in testRows on m.MaterialiseKey(uniqKey) equals t.MaterialiseKey(uniqKey)
-                   select Compare(m, t);
-        }
-
-        private string GetCompColumnNames(Row headers, List<int> compKeys) {
-            var compHeaders = new List<string>();
-            foreach (var item in compKeys) {
-                compHeaders.Add(headers.Columns[item]);
-            }
-            return "[" + string.Join("];[", compHeaders) + "]";
-        }
-
-        private int DistinctCount(IEnumerable<string> list) {
-            return list.Distinct().Count();
-        }
-
-        private Dictionary<int, List<Row>> Group(IWorkTable table, List<int> baseKeyIndex) {
-            var query = from rows in table.Rows
-                        group rows by rows.MaterialiseKey(baseKeyIndex) into grp
-                        //where grp.Count()==1
-                        select grp;
-            return query.ToDictionary(group => group.Key, group => group.ToList());
         }
 
         private List<int> AnalyseInGroup(List<ColumnSummary> columnsStat) {
             var uniqKey = columnsStat.FirstOrDefault(col => col.UniqMatchRate == 100);
-            var clearedStats = columnsStat.Where(col => col.MatchingRate != 0).ToList();
+            var clearedStats = columnsStat.Where(col => col.MatchingRate != 0 && !col.IsDouble).ToList();
             if (uniqKey != null) {
                 return new List<int>() { uniqKey.Id };
             } else if (clearedStats.Count == 0) {
                 return new List<int>();
             } else {
-                var maxUniqMatchRate = clearedStats.Max(col => col.UniqMatchRate);
-                var maxUniquenessRate = clearedStats.Where(col => col.UniqMatchRate == maxUniqMatchRate).Max(col => col.UniquenessRate);
-                var compKeys = clearedStats.Where(col => col.UniqMatchRate == maxUniqMatchRate && col.UniquenessRate == maxUniquenessRate).Select(col => col.Id);
+                var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
+                var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);
+                var compKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.UniqMatchRate == maxUniqMatchRate).Select(col => col.Id);
                 return compKeys.ToList();
             }
         }
 
-        private List<int> AnalyseForPivotKey(List<ColumnSummary> columnsStat) {
+        private Dictionary<int, List<Row>> Group(IEnumerable<Row> rows, List<int> pivotFields) {
+            return rows.GroupBy(col => col.GetValuesHashCode(pivotFields)).ToDictionary(group => group.Key, group => group.ToList());
+        }
+
+        private bool IsUsefulInCompositeKey(Dictionary<int, List<Row>> rows, List<int> pivotFields, int analysisColumn) {
+            return rows.Any(grp => grp.Value.Select(row => row[analysisColumn]).Distinct().Count() > 1);
+        }
+
+        private List<int> AnalyseForPivotKey(IEnumerable<Row> sampleRows, List<ColumnSummary> columnsStat) {
             var uniqKey = columnsStat.FirstOrDefault(col => col.UniqMatchRate == 100);
             if (uniqKey != null) {
                 return new List<int>() { uniqKey.Id };
-            } else {
-                var clearedStats = columnsStat.Where(col => !col.IsDouble);
-                var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
-                var compKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Select(col => col.Id);
-                return compKeys.ToList();
             }
-        }
-
-        private double CalculatePercentage(int x, int y) {
-            return Math.Round(((double)x / y) * 100, 2);
-        }
-
-        private bool IsNumeric(IEnumerable<string> column) {
-            int n = 0;
-            long l = 0;
-            return column.Where(item => item != "" && item.ToUpper() != "NULL").Distinct().All(item => int.TryParse(item, out n) || long.TryParse(item, out l));
-        }
-
-        private bool IsDouble(IEnumerable<string> column) {
-            double d;
-            return column.Where(item => item != "" && item.ToUpper() != "NULL").Distinct().All(item => double.TryParse(item, out d));
-        }
-
-        private bool HasNulls(IEnumerable<string> column) {
-            return column.Any(item => item == "" || item.ToUpper() == "NULL");
-        }
-
-        private List<ColumnSummary> GatherStatistics(IWorkTable masterTable, IWorkTable testTable) {
-            var totalRows = masterTable.RowsCount > testTable.RowsCount ? testTable.RowsCount : masterTable.RowsCount;
-            var columnsStat = new List<ColumnSummary>(masterTable.ColumnsCount);
-            IEnumerable<string> uniqColumsValues;
-            var masterColumn = new List<string>();
-            var testColumn = new List<string>();
-
-            for (int i = 0; i < masterTable.ColumnsCount; i++) {
-                // Parallel.For(0, masterTable.ColumnsCount, i => {
-                var mTask = Task.Run(() => masterTable.GetDistinctColumnValues(i));
-                var tTask = Task.Run(() => testTable.GetDistinctColumnValues(i));
-                Task.WaitAll(mTask, tTask);
-                masterColumn = mTask.Result;
-                testColumn = tTask.Result;
-                uniqColumsValues = from m in masterColumn join t in testColumn on m equals t select m;
-
-                var mDistCount = DistinctCount(masterColumn);
-                var tDistCount = DistinctCount(testColumn);
-                var matchedCount = mDistCount > tDistCount ? tDistCount : mDistCount;
-                var uniqCount = uniqColumsValues.Count();
-
-                var uniqMatchRate = CalculatePercentage(uniqCount, totalRows);
-                var uniquenessRate = CalculatePercentage(matchedCount, totalRows);
-                var matchingRate = CalculateRate(mDistCount, tDistCount, uniqCount);
-
-                var isNumeric = IsNumeric(uniqColumsValues);
-                var isDouble = isNumeric ? false : IsDouble(uniqColumsValues);
-                var hasNulls = HasNulls(uniqColumsValues);
-                if (mDistCount > 2 || tDistCount > 2) {
-                    ColumnSummary columnSummary = new ColumnSummary(i, masterTable.Headers.Columns[i], mDistCount, tDistCount, uniqCount, matchingRate, uniquenessRate, uniqMatchRate, isNumeric, isDouble, hasNulls);
-                    columnsStat.Add(columnSummary);
+            var clearedStats = columnsStat.Where(col => !col.IsDouble && !col.HasNulls);
+            var maxMatchingRate = clearedStats.Max(col => col.MatchingRate);
+            var maxUniqMatchRate = clearedStats.Where(col => col.MatchingRate == maxMatchingRate).Max(col => col.UniqMatchRate);
+            var mainPivotKey = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.UniqMatchRate == maxUniqMatchRate).First().Id;
+            var additionalKeys = clearedStats.Where(col => col.MatchingRate == maxMatchingRate && col.Id != mainPivotKey).Select(col => col.Id);
+            List<int> compositeKey = new List<int>() { mainPivotKey };
+            var groups = Group(sampleRows, compositeKey);
+            foreach (var key in additionalKeys) {
+                if (IsUsefulInCompositeKey(groups, compositeKey, key)) {
+                    compositeKey.Add(key);
+                    groups = Group(groups.Where(grp => grp.Value.Count() > 1).SelectMany(row => row.Value), compositeKey);
                 }
-                //     });
             }
-            return columnsStat;
+            return compositeKey;
+        }
+
+        //public async Task<Dictionary<int, HashSet<string>>> GetColumnsAsync(IEnumerable<Row> rows) {
+        //    return await Task.Run(() => GetColumns(rows));
+        //}
+
+        private Dictionary<int, HashSet<string>> GetColumns(IEnumerable<Row> rows) {
+            Dictionary<int, HashSet<string>> columns = new Dictionary<int, HashSet<string>>();
+            var firstLine = rows.FirstOrDefault();
+            var columnsCount = firstLine.Data.Length;
+            for (int i = 0; i < columnsCount; i++) {
+                HashSet<string> uniqVals = new HashSet<string>();
+                columns.Add(i, uniqVals);
+            }
+            int index = 0;
+            foreach (var row in rows) {
+                foreach (var item in row.Data) {
+                    columns[index++].Add(item);
+                }
+                index = 0;
+            }
+            return columns;
+        }
+
+        private List<ColumnSummary> GatherStatistics(IEnumerable<Row> masterRows, IEnumerable<Row> testRows) {
+            var masterColumns = GetColumns(masterRows);
+            var testColumns = GetColumns(testRows);
+            var totalRowsCount = masterRows.Count() > testRows.Count() ? testRows.Count() : masterRows.Count();
+            if (totalRowsCount == 0) {
+                return new List<ColumnSummary>();
+            }
+            var columnsSummary = masterColumns.Join(testColumns,
+                m => m.Key,
+                t => t.Key,
+                (m, t) => new ColumnSummary(m.Key, totalRowsCount, m.Value, t.Value)).ToList();
+            return columnsSummary;
         }
     }
 }

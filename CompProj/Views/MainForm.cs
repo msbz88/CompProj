@@ -17,14 +17,18 @@ namespace CompProj {
 
         public MainForm() {
             InitializeComponent();
+            listViewInfo.Columns.Add("", 285);
+            listViewInfo.Columns.Add("", 285);
         }
 
         private void ButtonOpenFilesClick(object sender, EventArgs e) {
             OpenFileEvent?.Invoke(sender, e);
         }       
 
-        public void WriteMessage(string messages) {
-            richTextBoxMessages.AppendText(messages + Environment.NewLine);
+        public void WriteMessage(string header, string message) {
+            ListViewItem listItem = new ListViewItem(new[] { header, message });
+            listViewInfo.Items.Add(listItem);
+            //listViewInfo.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
         }
     }
 }

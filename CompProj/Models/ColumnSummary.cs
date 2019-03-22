@@ -1,69 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CompProj.Models {
     public class ColumnSummary {
+        private int UniqCount { get; set; }
+        private int UniqMatchCount {get; set;}
         public int Id { get; set; }
-        public string Name { get; set; }
-        public int MasterUniqueRows { get; set; }
-        public int TestUniqueRows { get; set; }
-        public int Matched { get; set; }
         public double MatchingRate { get; set; }
         public double UniquenessRate { get; set; }
         public double UniqMatchRate { get; set; }
-        public bool IsNumeric { get; set; }
+        public bool IsString { get; set; }
         public bool IsDouble { get; set; }
-        public bool IsHasNulls { get; set; }
+        public bool HasNulls { get; set; }
+        private bool IsNumber { get; set; }
 
-        public ColumnSummary(int id, string name, int masterUniqueRows, int testUniqueRows, int matched, double matchingRate, double uniquenessRate, double uniqMatchRate, bool isNumeric, bool isDouble, bool isHasNulls) {
+        public ColumnSummary(int id, int totalRowsCount, HashSet<string> masterUniqVals, HashSet<string> testUniqVals) {
+            UniqMatchCount = masterUniqVals.Intersect(testUniqVals).Count();
+            UniqCount = masterUniqVals.Count > testUniqVals.Count ? testUniqVals.Count : masterUniqVals.Count;     
             Id = id;
-            Name = name;
-            MasterUniqueRows = masterUniqueRows;
-            TestUniqueRows = testUniqueRows;
-            Matched = matched;
-            MatchingRate = matchingRate;
-            UniquenessRate = uniquenessRate;
-            UniqMatchRate = uniqMatchRate;
-            IsNumeric = isNumeric;
-            IsDouble = isDouble;
-            IsHasNulls = isHasNulls;
+            MatchingRate = CalculateRate(masterUniqVals.Count, testUniqVals.Count, UniqMatchCount);
+            UniquenessRate = CalculatePercentage(UniqCount, totalRowsCount);
+            UniqMatchRate = CalculatePercentage(UniqMatchCount, totalRowsCount);
+            HasNulls = CheckIfHasNulls(masterUniqVals);
+            IsNumber = CheckIfNumeric(masterUniqVals);
+            IsDouble = IsNumber ? false : CheckIfDouble(masterUniqVals);
+            IsString = IsDouble || IsNumber ? false : true;
         }
 
-        //public override string ToString() {
-        //    StringBuilder sb = new StringBuilder();
-        //    sb.Append("[");
-        //    sb.Append(ColumnName);
-        //    sb.Append("]");
-        //    sb.Append(";");
-        //    sb.Append("Master Unq Rows: ");
-        //    sb.Append(MasterUniqueRows);
-        //    sb.Append(";");
-        //    sb.Append("Test Unq Rows: ");
-        //    sb.Append(TestUniqueRows);
-        //    sb.Append(";");
-        //    sb.Append("Matched: ");
-        //    sb.Append(Matched);
-        //    sb.Append(";");
-        //    sb.Append("Unique Rate: ");
-        //    sb.Append(UniqRate);
-        //    sb.Append(";");
-        //    sb.Append("Full Rate: ");
-        //    sb.Append(FullRate);
-        //    return sb.ToString();
-        //}
+        private bool CheckIfDouble(HashSet<string> columnData) {
+            double d;
+            var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL");
+            return clearSeq.Any() ? clearSeq.All(item => double.TryParse(item, out d)) : false ;
+        }
+
+        private bool CheckIfHasNulls(HashSet<string> columnData) {
+            return columnData.Any(item => item == "" || item.ToUpper() == "NULL");
+        }
+
+        private bool CheckIfNumeric(HashSet<string> columnData) {
+            int n = 0;
+            long l = 0;
+            var clearSeq = columnData.Where(item => item != "" && item.ToUpper() != "NULL");
+            return clearSeq.Any() ? clearSeq.All(item => int.TryParse(item, out n) || long.TryParse(item, out l)) : false;
+        }
+
+        private double CalculatePercentage(int x, int y) {
+            return Math.Round(((double)x / y) * 100, 2);
+        }
+
+        private double CalculateRate(int uniqueRowsMaster, int uniqueRowsTest, int matchedValues) {
+            if (matchedValues == 0) {
+                return 0;
+            } else {
+                double finalRate = 0;
+                var lowerNumber = uniqueRowsMaster > uniqueRowsTest ? uniqueRowsMaster : uniqueRowsTest;
+                finalRate = ((double)matchedValues / lowerNumber) * 100;
+                return Math.Round(finalRate, 2);
+            }
+        }
 
         public override string ToString() {
             StringBuilder sb = new StringBuilder();
-            sb.Append(Name);
-            sb.Append(";");
-            sb.Append(MasterUniqueRows);
-            sb.Append(";");
-            sb.Append(TestUniqueRows);
-            sb.Append(";");
-            sb.Append(Matched);
+            sb.Append(Id);
             sb.Append(";");
             sb.Append(MatchingRate);
             sb.Append(";");
@@ -71,11 +72,11 @@ namespace CompProj.Models {
             sb.Append(";");
             sb.Append(UniqMatchRate);
             sb.Append(";");
-            sb.Append(IsNumeric);
-            sb.Append(";");
             sb.Append(IsDouble);
             sb.Append(";");
-            sb.Append(IsHasNulls);
+            sb.Append(IsString);
+            sb.Append(";");
+            sb.Append(HasNulls);
             return sb.ToString();
         }
     }

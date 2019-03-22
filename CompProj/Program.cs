@@ -20,16 +20,10 @@ namespace CompProj {
             Application.SetCompatibleTextRenderingDefault(false);      
 
             IMainView mainView = new MainForm();
-            IImpConfigView impConfigView = new ImpConfigForm();
-
-            IFileReader fileReader = new FileReader();
-
-            ImpConfigPresenter impConfigPresenter = new ImpConfigPresenter(impConfigView, fileReader);
-            MainPresenter mainPresenter = new MainPresenter(mainView, impConfigPresenter);
+            IFileView fileView = new FileForm();
+            MainPresenter mainPresenter = new MainPresenter(mainView, fileView);
 
             Application.Run();
-
-
         }
     }
 }

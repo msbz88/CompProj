@@ -23,20 +23,13 @@
         /// the contents of this method with the code editor.
         /// </summary>
         private void InitializeComponent() {
-            this.components = new System.ComponentModel.Container();
-            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.buttonOpenFiles = new System.Windows.Forms.Button();
-            this.richTextBoxMessages = new System.Windows.Forms.RichTextBox();
+            this.listViewInfo = new System.Windows.Forms.ListView();
             this.SuspendLayout();
-            // 
-            // contextMenuStrip1
-            // 
-            this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(61, 4);
             // 
             // buttonOpenFiles
             // 
-            this.buttonOpenFiles.Location = new System.Drawing.Point(262, 44);
+            this.buttonOpenFiles.Location = new System.Drawing.Point(244, 258);
             this.buttonOpenFiles.Name = "buttonOpenFiles";
             this.buttonOpenFiles.Size = new System.Drawing.Size(75, 23);
             this.buttonOpenFiles.TabIndex = 1;
@@ -44,31 +37,43 @@
             this.buttonOpenFiles.UseVisualStyleBackColor = true;
             this.buttonOpenFiles.Click += new System.EventHandler(this.ButtonOpenFilesClick);
             // 
-            // richTextBoxMessages
+            // listViewInfo
             // 
-            this.richTextBoxMessages.Location = new System.Drawing.Point(-3, 73);
-            this.richTextBoxMessages.Name = "richTextBoxMessages";
-            this.richTextBoxMessages.Size = new System.Drawing.Size(340, 150);
-            this.richTextBoxMessages.TabIndex = 2;
-            this.richTextBoxMessages.Text = "";
+            this.listViewInfo.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.listViewInfo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.listViewInfo.FullRowSelect = true;
+            this.listViewInfo.HotTracking = true;
+            this.listViewInfo.HoverSelection = true;
+            this.listViewInfo.LabelWrap = false;
+            this.listViewInfo.Location = new System.Drawing.Point(4, 6);
+            this.listViewInfo.MultiSelect = false;
+            this.listViewInfo.Name = "listViewInfo";
+            this.listViewInfo.Size = new System.Drawing.Size(327, 285);
+            this.listViewInfo.TabIndex = 2;
+            this.listViewInfo.TileSize = new System.Drawing.Size(327, 50);
+            this.listViewInfo.UseCompatibleStateImageBehavior = false;
+            this.listViewInfo.View = System.Windows.Forms.View.Tile;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(338, 225);
-            this.Controls.Add(this.richTextBoxMessages);
+            this.BackColor = System.Drawing.SystemColors.Window;
+            this.ClientSize = new System.Drawing.Size(335, 323);
             this.Controls.Add(this.buttonOpenFiles);
+            this.Controls.Add(this.listViewInfo);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
             this.Name = "MainForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Main Form";
             this.ResumeLayout(false);
 
         }
 
         #endregion
-        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.Windows.Forms.Button buttonOpenFiles;
-        private System.Windows.Forms.RichTextBox richTextBoxMessages;
+        private System.Windows.Forms.ListView listViewInfo;
     }
 }
 

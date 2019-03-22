@@ -7,60 +7,68 @@ using System.Threading.Tasks;
 
 namespace CompProj.Models {
     public class CompareTable {
-        public List<int> IdHeaders { get; set; }
-        public IWorkTable BaseTable { get; set; }
+        IWorkTable MasterTable { get; set; }
+        IWorkTable TestTable { get; set; }
+        List<int> IdColumns { get; set; }
         public List<ComparedRow> Data {get;set;}
+        public List<string> Extra { get; set; }
 
-        public CompareTable(List<int> idHeaders, IWorkTable baseTable, List<ComparedRow> data) {
-            IdHeaders = idHeaders;
-            BaseTable = baseTable;
-            Data = data;
+        public CompareTable(IWorkTable masterTable, IWorkTable testTable, List<int> idColumns) {
+            Data = new List<ComparedRow>();
+            Extra = new List<string>();
+            MasterTable = masterTable;
+            TestTable = testTable;
+            IdColumns = idColumns;
         }
 
-        public void SaveToFile(string filePath, List<int> idHeaders, IWorkTable baseTable) {
-            List<string> result = new List<string>();
-            var delimiter = BaseTable.Headers.Delimiter.ToString();
+        public void SaveToFile(string filePath) {
             var compareHeaders = new List<string>();
             compareHeaders.Add("Diff");
-            compareHeaders.AddRange(BaseTable.Headers.ColumnIndexIn(IdHeaders));
-            var colWithDiff = GetColumnsWithDeviations();
-            compareHeaders.AddRange(BaseTable.Headers.ColumnIndexIn(colWithDiff));
-            result.Add(string.Join(delimiter, compareHeaders));
-            result.AddRange(AddIdColumsToData(colWithDiff));
+            compareHeaders.AddRange(MasterTable.Headers.ColumnIndexIn(IdColumns));
+            var columnsWithDiff = GetColumnsWithDeviations();
+            compareHeaders.AddRange(MasterTable.Headers.ColumnIndexIn(columnsWithDiff));
+            var result = new List<string>();
+            result.Add(string.Join(MasterTable.Delimiter, compareHeaders));
+            result.AddRange(AddIdentificationColumns(columnsWithDiff, MasterTable.Delimiter));
             File.WriteAllLines(filePath, result);
-            Data.Clear();
+            //Data.Clear();
         }
 
-        private List<string> AddIdColumsToData(List<int> colsWithDiff) {
-            var delimiter = BaseTable.Headers.Delimiter.ToString();
-            var query = from compRows in Data
-                        join rows in BaseTable.Rows on compRows.MasterRowID equals rows.Id
-                        select new { RowID = rows.ColumnIndexIn(IdHeaders), Diff = compRows.Diff, ComparedRows = compRows.ColumnIndexIn(colsWithDiff) };
-            List <string> newRow = new List<string>();
-            List<string> result = new List<string>();
-            foreach (var item in query) {
-                newRow.Add(item.Diff.ToString());
-                newRow.AddRange(item.RowID);
-                newRow.AddRange(item.ComparedRows);
-                result.Add(string.Join(delimiter, newRow));
-                newRow.Clear();
+        private List<int> GetColumnsWithDeviations() {
+            var result = new List<int>();
+            for (int i = 0; i < MasterTable.ColumnsCount; i++) {
+                var isDiff = GetColumn(i).Any(r => r != "0");
+                if (isDiff) {
+                    result.Add(i);
+                }
             }
             return result;
         }
 
-        private List<int> GetColumnsWithDeviations() {
-            List<int> res = new List<int>(0);
-            for (int i = 0; i < BaseTable.ColumnsCount; i++) {
-                var isDiff = GetColumn(i).Any(r => r != "0");
-                if (isDiff) {
-                    res.Add(i);
-                }               
-            }
-            return res;
+        private IEnumerable<string> AddIdentificationColumns(List<int> columnsWithDiff, string delimiter) {
+            return from d in Data
+                   join m in MasterTable.Rows on d.MasterRowID equals m.Id
+                   let diff = d.Diff
+                   let id = m.ColumnIndexIn(IdColumns)
+                   let data = d.ColumnIndexIn(columnsWithDiff)
+                   select diff + delimiter + string.Join(delimiter, id.Concat(data));
         }
 
-        private List<string> GetColumn(int columnPosition) {
-            return Data.Select(r => r.Columns[columnPosition]).ToList();
+        private IEnumerable<string> GetColumn(int columnPosition) {
+            return Data.Select(r => r.Data[columnPosition]);
+        }
+
+        private void AddHeadersForExtraData() {
+            Extra.Add("Id" + MasterTable.Delimiter + "Version" + MasterTable.Delimiter + string.Join(MasterTable.Delimiter, MasterTable.Headers.Data));
+        }
+
+        public void AddExtraData(IEnumerable<string> extraData) {
+            if (extraData.Count() > 0) {
+                if (Extra.Count == 0) {
+                    AddHeadersForExtraData();
+                }
+                Extra.AddRange(extraData);
+            }
         }
     }
 }
