@@ -28,8 +28,9 @@
             this.textBoxHeadersRow = new System.Windows.Forms.TextBox();
             this.labelHeaders = new System.Windows.Forms.Label();
             this.richTextBoxInfo = new System.Windows.Forms.RichTextBox();
-            this.buttonLoad = new System.Windows.Forms.Button();
             this.listViewFileContent = new System.Windows.Forms.ListView();
+            this.buttonLoad = new System.Windows.Forms.Button();
+            this.labelFileName = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // textBoxDelimiter
@@ -74,7 +75,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBoxInfo.BackColor = System.Drawing.SystemColors.Window;
             this.richTextBoxInfo.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBoxInfo.Location = new System.Drawing.Point(3, 5);
+            this.richTextBoxInfo.Location = new System.Drawing.Point(3, 23);
             this.richTextBoxInfo.Name = "richTextBoxInfo";
             this.richTextBoxInfo.ReadOnly = true;
             this.richTextBoxInfo.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.None;
@@ -82,18 +83,6 @@
             this.richTextBoxInfo.TabIndex = 0;
             this.richTextBoxInfo.TabStop = false;
             this.richTextBoxInfo.Text = "";
-            // 
-            // buttonLoad
-            // 
-            this.buttonLoad.ForeColor = System.Drawing.Color.Black;
-            this.buttonLoad.Location = new System.Drawing.Point(875, 315);
-            this.buttonLoad.Name = "buttonLoad";
-            this.buttonLoad.Size = new System.Drawing.Size(77, 25);
-            this.buttonLoad.TabIndex = 6;
-            this.buttonLoad.TabStop = false;
-            this.buttonLoad.Text = "Load";
-            this.buttonLoad.UseVisualStyleBackColor = true;
-            this.buttonLoad.Click += new System.EventHandler(this.ButtonLoadClick);
             // 
             // listViewFileContent
             // 
@@ -105,15 +94,37 @@
             this.listViewFileContent.ForeColor = System.Drawing.Color.Black;
             this.listViewFileContent.FullRowSelect = true;
             this.listViewFileContent.GridLines = true;
-            this.listViewFileContent.Location = new System.Drawing.Point(3, 21);
+            this.listViewFileContent.Location = new System.Drawing.Point(3, 37);
             this.listViewFileContent.MinimumSize = new System.Drawing.Size(477, 254);
             this.listViewFileContent.MultiSelect = false;
             this.listViewFileContent.Name = "listViewFileContent";
             this.listViewFileContent.ShowGroups = false;
-            this.listViewFileContent.Size = new System.Drawing.Size(827, 319);
+            this.listViewFileContent.Size = new System.Drawing.Size(827, 303);
             this.listViewFileContent.TabIndex = 1;
             this.listViewFileContent.UseCompatibleStateImageBehavior = false;
             this.listViewFileContent.View = System.Windows.Forms.View.Details;
+            // 
+            // buttonLoad
+            // 
+            this.buttonLoad.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonLoad.ForeColor = System.Drawing.Color.Black;
+            this.buttonLoad.Location = new System.Drawing.Point(875, 315);
+            this.buttonLoad.Name = "buttonLoad";
+            this.buttonLoad.Size = new System.Drawing.Size(77, 25);
+            this.buttonLoad.TabIndex = 6;
+            this.buttonLoad.TabStop = false;
+            this.buttonLoad.Text = "Load";
+            this.buttonLoad.UseVisualStyleBackColor = true;
+            this.buttonLoad.Click += new System.EventHandler(this.ButtonLoadClick);
+            // 
+            // labelFileName
+            // 
+            this.labelFileName.AutoSize = true;
+            this.labelFileName.Font = new System.Drawing.Font("Microsoft Sans Serif", 12.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelFileName.Location = new System.Drawing.Point(3, 0);
+            this.labelFileName.Name = "labelFileName";
+            this.labelFileName.Size = new System.Drawing.Size(0, 20);
+            this.labelFileName.TabIndex = 7;
             // 
             // FileForm
             // 
@@ -122,6 +133,7 @@
             this.AutoValidate = System.Windows.Forms.AutoValidate.EnableAllowFocusChange;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(964, 352);
+            this.Controls.Add(this.labelFileName);
             this.Controls.Add(this.buttonLoad);
             this.Controls.Add(this.richTextBoxInfo);
             this.Controls.Add(this.listViewFileContent);
@@ -130,7 +142,7 @@
             this.Controls.Add(this.labelDelimiter);
             this.Controls.Add(this.textBoxDelimiter);
             this.DoubleBuffered = true;
-            this.MinimumSize = new System.Drawing.Size(748, 338);
+            this.MinimumSize = new System.Drawing.Size(980, 391);
             this.Name = "FileForm";
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -146,7 +158,8 @@
         private System.Windows.Forms.TextBox textBoxHeadersRow;
         private System.Windows.Forms.Label labelHeaders;
         private System.Windows.Forms.RichTextBox richTextBoxInfo;
-        private System.Windows.Forms.Button buttonLoad;
         private System.Windows.Forms.ListView listViewFileContent;
+        private System.Windows.Forms.Button buttonLoad;
+        private System.Windows.Forms.Label labelFileName;
     }
 }

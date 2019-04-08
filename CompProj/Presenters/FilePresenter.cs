@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,11 +18,15 @@ namespace CompProj.Presenters {
         int HeadersRow { get; set; }
         public string PathMasterFile;
         public string PathTestFile;
+        List<string[]> MasterPreviewContent { get; set; }
+        List<string[]> TestPreviewContent { get; set; }
 
         public FilePresenter(IFileView impConfigView, IFileReader fileReader) {
             FileView = impConfigView;
             FileView.FileLoadEvent += OnFileLoad;
             FileReader = fileReader;
+            MasterPreviewContent = new List<string[]>();
+            TestPreviewContent = new List<string[]>();
         }
 
         public void Run() {
@@ -29,29 +34,53 @@ namespace CompProj.Presenters {
             if (!string.IsNullOrEmpty(PathMasterFile)) {
                 PathTestFile = FileView.GetFilePath("Test");
                 if (!string.IsNullOrEmpty(PathTestFile)) {                 
-                    ShowPreview(PathMasterFile, 65);
+                    ShowPreview(65);
                     FileView.ShowView();
                 }
             }
         }
 
-        private void ShowPreview(string filePath, int rowsToShow) {
-            var data = FileReader.ReadFewLines(filePath, rowsToShow);
-            var delimiter = FindDelimiter(data);
+        private void ShowPreview(int rowsToShow) {
+            var mData = FileReader.ReadFewLines(PathMasterFile, rowsToShow);
+            var tData = FileReader.ReadFewLines(PathTestFile, rowsToShow);
+            var delimiter = FindDelimiter(mData);
             if (!string.IsNullOrEmpty(delimiter)) {
                 Delimiter = delimiter;
                 FileView.Delimiter = Delimiter == "\t" ? "\\t": Delimiter;
             } else {
                 Delimiter = FileView.Delimiter;              
             }
-            HeadersRow = FindDataBeginning(data);
+            HeadersRow = FindDataBeginning(mData);
             FileView.HeadersRow = HeadersRow.ToString();
-            var previewContent = data.Select(line => line.Split(new string[] { delimiter }, StringSplitOptions.None));
-            var headers = previewContent.ElementAt(HeadersRow).ToList();
-            if (HeadersRow > 0) {
-                WriteInfoMessage("Automatically skipped rows:", data.Take(HeadersRow).ToArray());
+            if (!LoadPreview(mData.ToList(), tData.ToList())) {
+                FileView.ShowError("Error: Files have different number of columns.");
+                FileView.BlockLoad();
             }
-            FileView.DisplayFilePreview(headers, previewContent.Skip(HeadersRow + 1).ToList());
+            var headers = MasterPreviewContent.ElementAt(HeadersRow).ToList();
+            if (HeadersRow > 0) {
+                WriteInfoMessage("Automatically skipped rows:", mData.Take(HeadersRow).ToArray());
+            }
+            FileView.CurrentFileName = Path.GetFileName(PathMasterFile);
+            FileView.DisplayFilePreview(headers, MasterPreviewContent.Skip(HeadersRow + 1).ToList());
+        }
+
+        private bool LoadPreview(List<string> mData, List<string> tData) {
+            bool res = false;
+            var rowsToShow = mData.Count > tData.Count ? mData.Count : tData.Count;
+            for (int i = 0; i < rowsToShow; i++) {
+                var mLine = mData[i].Split(new string[] { Delimiter }, StringSplitOptions.None);
+                var tLine = tData[i].Split(new string[] { Delimiter }, StringSplitOptions.None);
+
+                MasterPreviewContent.Add(mLine);
+                TestPreviewContent.Add(tLine);
+
+                if (mLine.Length == tLine.Length) {
+                    res = true;
+                } else {
+                    res = false;
+                }
+            }
+            return res;
         }
 
         private void WriteInfoMessage(string msg, string[] data) {

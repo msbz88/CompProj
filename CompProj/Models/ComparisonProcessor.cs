@@ -7,21 +7,30 @@ using System.Threading.Tasks;
 
 namespace CompProj.Models {
     public class ComparisonProcessor /*: IComparisonProcessor */{
+        public int MasterRowsCount { get; set; }
+        public int TestRowsCount { get; set; }
+        public int ActualRowsDiff { get; set; }       
+        public int ComparedRowsCount { get; set; }
+        public int ExtraRowsCount { get; set; }
+        VerticalMatch verticalMatch;
         List<string> ComparedRowSB = new List<string>();
         PerformanceCounter PerfCounter;
         CompareTable CompareTable;
         IWorkTable MasterTable;
         IWorkTable TestTable;
         string Delimiter;
-        List<ColumnSummary> BaseStat;
+        public List<ColumnSummary> BaseStat;
         List<int> PivotKeysIndexes { get; set; }
+
         public ComparisonProcessor(PerformanceCounter perfCounter) {
             PerfCounter = perfCounter;
         }
 
-        public async Task Execute(IWorkTable masterTable, IWorkTable testTable) {
+        public CompareTable Execute(IWorkTable masterTable, IWorkTable testTable) {
             MasterTable = masterTable;
             TestTable = testTable;
+            //var mm = masterTable.Rows.Where(item => item.Data[10] == "373522");
+            //var tt = testTable.Rows.Where(item => item.Data[10] == "373522");
             Delimiter = masterTable.Delimiter;
             //gather base stat  
             PerfCounter.Start();
@@ -30,38 +39,56 @@ namespace CompProj.Models {
             //analyse
             File.WriteAllLines(@"C:\Users\MSBZ\Desktop\baseStat.txt", BaseStat.Select(r => r.ToString()));
             PerfCounter.Start();
-            PivotKeysIndexes = await Task.Run(() => AnalyseForPivotKey(masterTable.Rows, BaseStat));
+            PivotKeysIndexes = AnalyseForPivotKey(masterTable.Rows, BaseStat);
             PerfCounter.Stop("AnalyseForPivotKey");
             File.AppendAllText(@"C:\Users\MSBZ\Desktop\baseStat.txt", "baseKeyIndex: " + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)));
-            //non-unique
+            //group
             PerfCounter.Start();
             var groupsM = Group(masterTable.Rows, PivotKeysIndexes);
             var groupsT = Group(testTable.Rows, PivotKeysIndexes);
             PerfCounter.Stop("Base Group");
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\groups.txt", string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\nonUStat.txt", "");
-            PerfCounter.Start();
+            //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsM.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
+            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsM.txt", groupsM.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
+            //File.WriteAllText(@"C:\Users\MSBZ\Desktop\groupsT.txt", "Hash" + ";" + string.Join(";", masterTable.Headers.ColumnIndexIn(PivotKeysIndexes)) + Environment.NewLine);
+            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\groupsT.txt", groupsT.SelectMany(item => item.Value.Select(it => it.GetValuesHashCode(PivotKeysIndexes) + ";" + string.Join(";", it.ColumnIndexIn(PivotKeysIndexes)))));
+            //PerfCounter.Start();
             var compareHeaders = masterTable.Headers.ColumnIndexIn(PivotKeysIndexes).ToList();
             compareHeaders.AddRange(masterTable.Headers.Data);
             CompareTable = new CompareTable(masterTable, testTable, PivotKeysIndexes);
-            var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
-            var uTestRows = groupsT.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
-            CompareTable.Data.AddRange(Match(uMasterRows, uTestRows, PivotKeysIndexes));
-            PerfCounter.Stop("Preparison");
+            //var uMasterRows = groupsM.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value);
+            //var uTestRows = groupsT.Where(r => r.Value.Count() == 1).ToDictionary(item => item.Key, item => item.Value);
+            //CompareTable.Data.AddRange(Match(uMasterRows.SelectMany(item=>item.Value), uTestRows.SelectMany(item => item.Value), PivotKeysIndexes));
+            //PerfCounter.Stop("Preparison");
 
             PerfCounter.Start();
-            var mRemainings = groupsM.Where(r => r.Value.Count() > 1).ToList();
-            var tRemainings = groupsT.Where(r => r.Value.Count() > 1).ToList();
-            int run = 0;
-            var groups = from m in mRemainings
-                         join t in tRemainings on m.Key equals t.Key
-                         select ProcessGroup(m.Value, t.Value, ref run);
+            //var mRemainings = groupsM.Where(r => !uMasterRows.Keys.Contains(r.Key)).ToDictionary(item => item.Key, item => item.Value);
+            //var tRemainings = groupsT.Where(r => !uTestRows.Keys.Contains(r.Key)).ToDictionary(item => item.Key, item => item.Value);
+
+            verticalMatch = new VerticalMatch(BaseStat);
+
+            //var test = masterTable.Rows.Where(item=>item.Data[117] == "CRT-U XTSE" && item.Data[225] == "20180727");
+            //var test2 = groupsM.Values.SelectMany(item => item.Where(i=>i.Data[117] == "CRT-U XTSE" && i.Data[225] == "20180727").Select(i=>i.Id));
+
+            //var test3 = testTable.Rows.Where(item => item.Data[117] == "CRT-U XTSE" && item.Data[225] == "20180727");
+            //var test4 = groupsT.Values.SelectMany(item => item.Where(i => i.Data[117] == "CRT-U XTSE" && i.Data[225] == "20180727").Select(i => i.Id));
+
+            //var test5 = groupsM.Where(item => item.Value.Select(i => i.Id).Contains(58)).First().Key;
+            //var test6 = groupsT.Where(item => item.Value.Select(i => i.Id).Contains(25382)).First().Key;
+
+            //File.AppendAllText(@"C:\Users\MSBZ\Desktop\ex.txt", test5);
+            //File.AppendAllText(@"C:\Users\MSBZ\Desktop\ex.txt", "*****");
+            //File.AppendAllText(@"C:\Users\MSBZ\Desktop\ex.txt", test6);
+
+            var groups = from m in groupsM
+                         join t in groupsT on m.Key equals t.Key
+                         select ProcessGroup(m.Value, t.Value);
+
             var res = groups.SelectMany(r => r);
             if (res.Any()) {
                 CompareTable.Data.AddRange(res);
             }
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\run.txt", run.ToString());
             PerfCounter.Stop("Process");
+
             //extra
             PerfCounter.Start();
             var masterExtra = GetExtraRows(masterTable, CompareTable.Data.Select(r => r.MasterRowID).Distinct());
@@ -74,137 +101,26 @@ namespace CompProj.Models {
             }
             //save to file
             string comparedRecordsFile = @"C:\Users\MSBZ\Desktop\comparedRecords.txt";
-            SaveSummary(masterTable.RowsCount, testTable.RowsCount, CompareTable.Data.Count, CompareTable.Extra.Count);
+            FillSummary(masterTable.RowsCount, testTable.RowsCount, CompareTable.Data.Count, CompareTable.Extra.Count);
             PerfCounter.Start();
             CompareTable.SaveToFile(comparedRecordsFile);
             PerfCounter.Stop("Save comparison");
             PerfCounter.SaveAllResults();
+            return CompareTable;
         }
 
-        private void SaveSummary(int mRowsCount, int tRowsCount, int compRowsCount, int extraRowsCount) {
+        private List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows) {
+            return verticalMatch.ProcessGroup(masterRows, testRows);
+        }
+
+        private void FillSummary(int mRowsCount, int tRowsCount, int compRowsCount, int extraRowsCount) {
             var actRowsDiff = mRowsCount >= tRowsCount ? mRowsCount - tRowsCount : tRowsCount - mRowsCount;
-            File.WriteAllText(@"C:\Users\MSBZ\Desktop\Summary.txt",
-                "Master: " + mRowsCount + ";Test: " + tRowsCount + ";Act diff: " + actRowsDiff + ";Compared: " + compRowsCount + ";Extra: " + extraRowsCount);
-        }
-
-        private List<ComparedRow> ProcessGroup(List<Row> masterRows, List<Row> testRows, ref int run) {
-            var comparedRows = new List<ComparedRow>();
-            //masterTable.SaveToFile(@"C:\Users\MSBZ\Desktop\tempMaster.txt");
-            //testTable.SaveToFile(@"C:\Users\MSBZ\Desktop\tempTest.txt");
-            //var stat = GatherStatistics(masterRows, testRows);
-            //var newKeysIndexes = AnalyseInGroup(stat);
-            //File.AppendAllLines(@"C:\Users\MSBZ\Desktop\nonUStat.txt", stat.Select(r => run + ";" + r.ToString()));
-            //if (newKeysIndexes.Count == 0) {
-            //    ApplyRowNumberInGroup(masterRows, compKeysIndexes);
-            //    ApplyRowNumberInGroup(testRows, compKeysIndexes);
-            //    comparedRows.AddRange(Match(masterRows, testRows, compKeysIndexes));
-            //} else {
-
-            run += masterRows.Count;
-
-            var allreadyMatched = new List<int>();
-            foreach (var masterRow in masterRows) {
-                var testRowsChunk = testRows.Where(item => !allreadyMatched.Contains(item.Id)).ToList();
-                Row testRow;
-                if (testRowsChunk.Count == 0) {
-                    break;
-                } else if (testRowsChunk.Count == 1) {
-                    testRow = testRowsChunk.First();                  
-                } else {
-                    testRow = MatchSingle(masterRow, testRowsChunk);
-                }
-                comparedRows.Add(Compare(masterRow, testRow));
-                allreadyMatched.Add(testRow.Id);
-            }
-
-            //var grpMaster = Group(masterRows, newKeysIndexes);
-            //var grpTest = Group(testRows, newKeysIndexes);
-            //var uMasterRows = grpMaster.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
-            //var uTestRows = grpTest.Where(r => r.Value.Count() == 1).SelectMany(r => r.Value).ToList();
-            //comparedRows.AddRange(Match(uMasterRows, uTestRows, newKeysIndexes));
-            //var mRemainings = grpMaster.Where(r => r.Value.Count() > 1);
-            //var tRemainings = grpTest.Where(r => r.Value.Count() > 1);
-            //if (mRemainings.Count() > 0 && tRemainings.Count() > 0) {
-            //    var groups = from mRem in mRemainings join tRem in tRemainings on mRem equals tRem select mRem;
-            //    foreach (var item in groups) {
-            //        ProcessGroup(mRemainings.SelectMany(row => row.Value).ToList(), tRemainings.SelectMany(row => row.Value).ToList(), newKeysIndexes, run + 0.01);
-            //    }
-            //}
-            //}
-            return comparedRows;
-        }
-
-        private Row MatchSingle(Row masterRow, List<Row> testRows) {
-            Dictionary<int, List<int>> map = new Dictionary<int, List<int>>();
-            int index = 0;
-            foreach (var testRow in testRows) {
-                map.Add(index, new List<int>());
-                for (int columnIndex = 0; columnIndex < testRow.Data.Length; columnIndex++) {
-                    if (masterRow.Data[columnIndex] != testRow.Data[columnIndex]) {
-                        map[index].Add(columnIndex);
-                    }
-                }
-                index++;
-            }
-            int min = map.Min(item => item.Value.Count);
-            var bestMatch = map.Where(item => item.Value.Count == min).ToList();
-            int matchedRowIndex = -1;
-            if (bestMatch.Count == 1) {
-                matchedRowIndex = bestMatch.First().Key;
-                return testRows[matchedRowIndex];
-            } else {
-                var isSameColumns = min == bestMatch.SelectMany(item => item.Value).Distinct().Count();
-                if (isSameColumns) {
-                    matchedRowIndex = SameColumnsDiffHandler(bestMatch.Select(item => item.Value).First(), masterRow, testRows);
-                } else {
-                    //matchedRowIndex = DiffColumnsDiffHandler();
-                    matchedRowIndex = 0;
-                }              
-                //File.WriteAllText(@"C:\Users\MSBZ\Desktop\mRow.txt", string.Join(";", masterRow.Data));
-                //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\testRows.txt", testRows.Select(i => string.Join(";", i.Data)));
-                //File.WriteAllLines(@"C:\Users\MSBZ\Desktop\map.txt", map.Select(i => string.Join(";", i.Value)));
-                return testRows[matchedRowIndex];
-            }       
-        }
-
-        private int SameColumnsDiffHandler(List<int> diffColumns, Row masterRow, List<Row> testRows) {
-            int index = -1;
-            var queryStat = 
-                    from col in diffColumns
-                    join stat in BaseStat on col equals stat.Id
-                    select stat;
-            if(queryStat.All(item => item.IsString)) {
-                index = 0;
-            } else {
-                var numFields = queryStat.Where(item => !item.IsString).Select(item => item.Id);
-                var mRowNumFileds = masterRow.ColumnIndexIn(numFields).ToList();
-                var tRowsNumFields = testRows.Select(item => item.ColumnIndexIn(numFields)).ToList();
-                Dictionary<int, List<double>> map = new Dictionary<int, List<double>>();
-                for (int rowsIndex = 0; rowsIndex < tRowsNumFields.Count; rowsIndex++) {               
-                    map.Add(rowsIndex, new List<double>());
-                    for (int columnsIndex = 0; columnsIndex < mRowNumFileds.Count; columnsIndex++) {
-                        double mNum = 0;
-                        var itemM = mRowNumFileds[columnsIndex];
-                        double.TryParse(itemM, out mNum);
-                        
-                        double tNum = 0;
-                        var itemT = tRowsNumFields[rowsIndex][columnsIndex];
-                        double.TryParse(itemT, out tNum);
-
-                        var diff = mNum - tNum;
-                        map[rowsIndex].Add(diff);
-                    }
-                }
-                var min = map.Min(item => item.Value.Sum());
-                index = map.Where(item => item.Value.Sum() == min).First().Key;
-            }
-            return index;
-        }
-
-        private int DiffColumnsDiffHandler() {
-            int index = 0;
-            return index;
-        }
+            MasterRowsCount = mRowsCount;
+            TestRowsCount = tRowsCount;
+            ActualRowsDiff = actRowsDiff;
+            ComparedRowsCount = compRowsCount;
+            ExtraRowsCount = extraRowsCount;
+        }    
 
         public void ApplyRowNumberInGroup(IEnumerable<Row> rows, List<int> compKeys) {
             var query = from r in rows
@@ -224,7 +140,7 @@ namespace CompProj.Models {
         private ComparedRow Compare(Row masterRow, Row testRow) {
             ComparedRowSB.Clear();
             int rowDiff = 0;
-            var idColumnsData = string.Join(Delimiter, masterRow.ColumnIndexIn(PivotKeysIndexes));
+            //var idColumnsData = string.Join(Delimiter, masterRow.ColumnIndexIn(PivotKeysIndexes));
             for (int i = 0; i < masterRow.Data.Count(); i++) {
                 if (masterRow.Data[i] == testRow.Data[i]) {
                     ComparedRowSB.Add("0");
@@ -237,7 +153,7 @@ namespace CompProj.Models {
                     rowDiff++;
                 }
             }
-            return new ComparedRow(0, masterRow.Id, testRow.Id, rowDiff, idColumnsData, ComparedRowSB.ToArray());
+            return new ComparedRow(0, masterRow.Id, testRow.Id, rowDiff, "", ComparedRowSB.ToArray());
         }
 
         private IEnumerable<string> GetExtraRows(IWorkTable table, IEnumerable<int> comparedId) {
@@ -269,11 +185,11 @@ namespace CompProj.Models {
             }
         }
 
-        private Dictionary<int, List<Row>> Group(IEnumerable<Row> rows, List<int> pivotFields) {
-            return rows.GroupBy(col => col.GetValuesHashCode(pivotFields)).ToDictionary(group => group.Key, group => group.ToList());
+        private Dictionary<string, List<Row>> Group(IEnumerable<Row> rows, List<int> pivotFields) {
+            return rows.GroupBy(col => string.Join(" | ",col.ColumnIndexIn(pivotFields))).ToDictionary(group => group.Key, group => group.ToList());
         }
 
-        private bool IsUsefulInCompositeKey(Dictionary<int, List<Row>> rows, List<int> pivotFields, int analysisColumn) {
+        private bool IsUsefulInCompositeKey(Dictionary<string, List<Row>> rows, List<int> pivotFields, int analysisColumn) {
             return rows.Any(grp => grp.Value.Select(row => row[analysisColumn]).Distinct().Count() > 1);
         }
 
@@ -320,7 +236,7 @@ namespace CompProj.Models {
             return columns;
         }
 
-        private List<ColumnSummary> GatherStatistics(IEnumerable<Row> masterRows, IEnumerable<Row> testRows) {
+        public List<ColumnSummary> GatherStatistics(IEnumerable<Row> masterRows, IEnumerable<Row> testRows) {
             var masterColumns = GetColumns(masterRows);
             var testColumns = GetColumns(testRows);
             var totalRowsCount = masterRows.Count() > testRows.Count() ? testRows.Count() : masterRows.Count();
@@ -331,7 +247,7 @@ namespace CompProj.Models {
                 m => m.Key,
                 t => t.Key,
                 (m, t) => new ColumnSummary(m.Key, totalRowsCount, m.Value, t.Value)).ToList();
-            return columnsSummary;
+            return columnsSummary.ToList();
         }
     }
 }

@@ -20,7 +20,7 @@ namespace CompProj.Models {
 
         public void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist) {
             Delimiter = delimiter;
-            var firstLine = Parse(data.FirstOrDefault());
+            var firstLine = Parse(data.First());
             ColumnsCount = firstLine.Length;
             if (isHeadersExist) {
                 Headers = new Row(0, firstLine);
@@ -29,7 +29,14 @@ namespace CompProj.Models {
                 Headers = GenerateDefaultHeaders();
             }
             RowsCount = 0;
-            Rows = data.Select(line => new Row(++RowsCount, Parse(line))).ToList();         
+            foreach (var line in data) {
+                var row = new Row(++RowsCount, Parse(line));
+                if(row.Data.Length == ColumnsCount) {
+                    Rows.Add(row);
+                }else {
+                    throw new Exception("Parse failed! Different number of columns.");                }                           
+            }
+            //Rows = data.Select(line => new Row(++RowsCount, Parse(line))).ToList();         
             //RowsRep = new Dictionary<int, Row>(RowsCount);
             ////Rows = new List<Row>(RowsCount);
             //for (int i = 0; i < RowsCount; i++) {
@@ -63,6 +70,12 @@ namespace CompProj.Models {
                 result.Add(item.ToString());
             }
             File.WriteAllLines(filePath, result);
+        }
+
+        public void SetGroupId(List<int> pivotKeys) {
+            foreach (var row in Rows) {
+                row.GroupId = row.GetValuesHashCode(pivotKeys);
+            }
         }
     }
 }

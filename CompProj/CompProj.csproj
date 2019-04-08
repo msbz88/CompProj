@@ -57,10 +57,12 @@
     <Compile Include="Models\Interfaces\IFileReader.cs" />
     <Compile Include="Models\Interfaces\IFileConfiguration.cs" />
     <Compile Include="Models\Interfaces\IWorkTable.cs" />
+    <Compile Include="Models\RowMap.cs" />
     <Compile Include="Models\PerformanceCounter.cs" />
     <Compile Include="Models\Row.cs" />
     <Compile Include="Presenters\FilePresenter.cs" />
     <Compile Include="Presenters\MainPresenter.cs" />
+    <Compile Include="Models\VerticalMatch.cs" />
     <Compile Include="Views\FileForm.cs">
       <SubType>Form</SubType>
     </Compile>

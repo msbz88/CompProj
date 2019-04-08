@@ -8,6 +8,11 @@ using CompProj.Models.Interfaces;
 
 namespace CompProj.Models {
     public class ComparisonHelper {
+        public int MasterRowsCount { get; set; }
+        public int TestRowsCount { get; set; }
+        public int ActualRowsDiff { get; set; }
+        public int ComparedRowsCount { get; set; }
+        public int ExtraRowsCount { get; set; }
         IFileReader FileReader { get; set; }
         IFileConfiguration FileConfiguration { get; set; }
         PerformanceCounter perfCounter = new PerformanceCounter();
@@ -17,11 +22,11 @@ namespace CompProj.Models {
             FileConfiguration = fileConfiguration;
         }
 
-        public async Task PrepareForComparison() {
+        public void PrepareForComparison() {
 
             perfCounter.Start();
             var masterFileContent = FileReader.ReadFile(FileConfiguration.PathMasterFile, FileConfiguration.RowsToSkip, FileConfiguration.Encoding);
-            var testFileContent = FileReader.ReadFile(FileConfiguration.PathTestFile, FileConfiguration.RowsToSkip, FileConfiguration.Encoding);        
+            var testFileContent = FileReader.ReadFile(FileConfiguration.PathTestFile, FileConfiguration.RowsToSkip, FileConfiguration.Encoding);
             perfCounter.Stop("Read two init files");
 
             perfCounter.Start();
@@ -35,10 +40,11 @@ namespace CompProj.Models {
             if (exceptedMasterData.Any() && exceptedTestData.Any()) {
                 perfCounter.Start();
                 masterTable.LoadData(exceptedMasterData, FileConfiguration.Delimiter, FileConfiguration.IsHeadersExist);
-                testTable.LoadData(exceptedTestData, FileConfiguration.Delimiter, FileConfiguration.IsHeadersExist);
+                testTable.LoadData(exceptedTestData, FileConfiguration.Delimiter, FileConfiguration.IsHeadersExist);        
                 perfCounter.Stop("Load two files to WorkTable");
                 ComparisonProcessor comparisonProcessor = new ComparisonProcessor(perfCounter);
-                await comparisonProcessor.Execute(masterTable, testTable);
+                comparisonProcessor.Execute(masterTable, testTable);
+                FillSummary(comparisonProcessor);
             } else {
                 perfCounter.SaveAllResults();
             }
@@ -49,8 +55,17 @@ namespace CompProj.Models {
             if (FileConfiguration.IsHeadersExist) {
                 headersLine = dataFirst.Take(1);
             }
-            var uniqLines = new HashSet<int>(dataSecond.Select(line=>line.GetHashCode()));
-            return headersLine.Concat(dataFirst.Where(x => !uniqLines.Contains(x.GetHashCode())));
+            var uniqLines = new HashSet<string>(dataSecond);
+            var duplicates = dataFirst.GroupBy(x => x).Where(g => g.Count() > 1).Select(y => y.Key);
+            return headersLine.Concat(duplicates.Concat(dataFirst.Where(x => !uniqLines.Contains(x))));
+        }
+
+        private void FillSummary(ComparisonProcessor comparisonProcessor) {
+            MasterRowsCount = comparisonProcessor.MasterRowsCount;
+            TestRowsCount = comparisonProcessor.TestRowsCount;
+            ActualRowsDiff = comparisonProcessor.ActualRowsDiff;
+            ComparedRowsCount = comparisonProcessor.ComparedRowsCount;
+            ExtraRowsCount = comparisonProcessor.ExtraRowsCount;
         }
 
         //private List<int> ColumnsToExclude(List<ColumnSummary> columnsSummary) {
@@ -62,6 +77,6 @@ namespace CompProj.Models {
         //    return result;
         //}
 
-       
+
     }
 }

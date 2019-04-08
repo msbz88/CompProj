@@ -10,8 +10,10 @@ namespace CompProj.Views.Interfaces {
         string Delimiter { get; set; }
         string InfoBox { get; set; }
         string HeadersRow { get; set; }
+        string CurrentFileName { get; set; }
         void ShowError(string error);
         void ShowView();
+        void BlockLoad();
         void Close();
         void DisplayFilePreview(List<string> headers, List<string[]> fileContent);
         string GetFilePath(string fileVersion);

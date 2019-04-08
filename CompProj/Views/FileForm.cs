@@ -24,9 +24,19 @@ namespace CompProj.Views {
         }
         public string Delimiter { get { return textBoxDelimiter.Text; } set { textBoxDelimiter.Text = value.ToString(); } }
         public string HeadersRow { get { return textBoxHeadersRow.Text; } set { textBoxHeadersRow.Text = value.ToString(); } }
+        public string CurrentFileName { get { return labelFileName.Text; } set { labelFileName.Text = value.ToString(); } }
 
         public FileForm() {
             InitializeComponent();
+            DrawBorderForLoadButton(Color.Green);
+            labelFileName.ForeColor = Color.Gray;
+        }
+
+        private void DrawBorderForLoadButton(Color color) {
+            Button bt = Controls.Find("buttonLoad", true)[0] as Button;
+            bt.FlatStyle = FlatStyle.Flat;
+            bt.FlatAppearance.BorderColor = color;
+            bt.FlatAppearance.BorderSize = 1;
         }
 
         public void ShowView() {
@@ -34,18 +44,24 @@ namespace CompProj.Views {
         }
 
         private void InitializeInfoBox() {
-            listViewFileContent.Location = new Point(3, 72);
-            listViewFileContent.Height = 270;
+            listViewFileContent.Location = new Point(3, 88);
+            listViewFileContent.Height = 245;
             richTextBoxInfo.Width = 827;
             richTextBoxInfo.Height = 59;
         }
 
         public void DisplayFilePreview(List<string> headers, List<string[]> fileContent) {
-            listViewFileContent.Clear();              
-            headers.ForEach(name => listViewFileContent.Columns.Add(name));
+            int columnsStart = 0;
+            int columnsEnd = 17;
+            listViewFileContent.BeginUpdate();
+            listViewFileContent.Clear();
+            for (columnsStart = 0; columnsStart < columnsEnd; columnsStart++) {
+                listViewFileContent.Columns.Add("[" + columnsStart + "] " + headers[columnsStart]);
+            }        
             listViewFileContent.AutoResizeColumns(ColumnHeaderAutoResizeStyle.HeaderSize);
-            ListViewItem[] listItems = fileContent.Select(line => new ListViewItem(line)).ToArray();      
+            ListViewItem[] listItems = fileContent.Select(line => new ListViewItem(line.ToList().GetRange(columnsStart, columnsEnd).ToArray())).ToArray();      
             listViewFileContent.Items.AddRange(listItems);
+            listViewFileContent.EndUpdate();
         }
 
         public string GetFilePath(string fileVersion) {
@@ -69,6 +85,11 @@ namespace CompProj.Views {
 
         private void ButtonLoadClick(object sender, EventArgs e) {
             FileLoadEvent?.Invoke(sender, e);
+        }
+
+        public void BlockLoad() {
+            DrawBorderForLoadButton(Color.Red);
+            buttonLoad.Enabled = false;
         }
     }
 }

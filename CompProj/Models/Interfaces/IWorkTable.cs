@@ -10,6 +10,7 @@ namespace CompProj.Models {
         int ColumnsCount { get; }
         int RowsCount { get; }
         string Delimiter { get; }
+        void SetGroupId(List<int> pivotKeys);
         //Task<Dictionary<int, HashSet<string>>> GetColumnsAsync();
         void LoadData(IEnumerable<string> data, string delimiter, bool isHeadersExist);
         void SaveToFile(string filePath);

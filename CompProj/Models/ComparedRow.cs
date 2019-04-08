@@ -29,7 +29,7 @@ namespace CompProj.Models {
         //    foreach (var item in Data) {
         //        sb.Append(item);
         //        sb.Append(Delimiter);
-        //    }          
+        //    }
         //    return sb.ToString().TrimEnd(Delimiter);
         //}
     }

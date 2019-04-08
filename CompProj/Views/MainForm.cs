@@ -30,5 +30,6 @@ namespace CompProj {
             listViewInfo.Items.Add(listItem);
             //listViewInfo.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
         }
+
     }
 }

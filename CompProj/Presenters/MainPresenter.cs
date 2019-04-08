@@ -33,8 +33,17 @@ namespace CompProj.Presenters {
             MainView.WriteMessage("Master file", Path.GetFileName(FilePresenter.PathMasterFile));
             MainView.WriteMessage("Test file", Path.GetFileName(FilePresenter.PathTestFile));
             ComparisonHelper ComparisonHelper = new ComparisonHelper(FileReader, fileConfiguration);
-            await ComparisonHelper.PrepareForComparison();
-            MainView.WriteMessage("Result", "Task Completed");
+            try {
+                await Task.Run(() => ComparisonHelper.PrepareForComparison());
+            } catch (Exception ex) {
+                MainView.WriteMessage("Error", ex.Message);
+                return;
+            }
+            MainView.WriteMessage("Master", ComparisonHelper.MasterRowsCount.ToString());
+            MainView.WriteMessage("Test", ComparisonHelper.TestRowsCount.ToString());
+            MainView.WriteMessage("Actual diff", ComparisonHelper.ActualRowsDiff.ToString());
+            MainView.WriteMessage("Compared", ComparisonHelper.ComparedRowsCount.ToString());
+            MainView.WriteMessage("Extra", ComparisonHelper.ExtraRowsCount.ToString());
         }
     }
 }

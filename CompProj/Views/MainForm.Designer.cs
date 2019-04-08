@@ -42,9 +42,7 @@
             this.listViewInfo.Activation = System.Windows.Forms.ItemActivation.OneClick;
             this.listViewInfo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.listViewInfo.FullRowSelect = true;
-            this.listViewInfo.HotTracking = true;
             this.listViewInfo.HoverSelection = true;
-            this.listViewInfo.LabelWrap = false;
             this.listViewInfo.Location = new System.Drawing.Point(4, 6);
             this.listViewInfo.MultiSelect = false;
             this.listViewInfo.Name = "listViewInfo";
